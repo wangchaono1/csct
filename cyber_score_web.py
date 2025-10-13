@@ -46,45 +46,43 @@ if st.button("开始检测"):
             "汇总结果并生成报告..."
         ]
 
-        try:
-            for i, step in enumerate(progress_steps):
-                progress_text.text(step)
-                progress_bar.progress(int((i + 1) / len(progress_steps) * 100))
-                time.sleep(0.3)
-            progress_text.text("正在汇总结果...")
+try:
+    for i, step in enumerate(progress_steps):
+        progress_text.text(step)
+        progress_bar.progress(int((i + 1) / len(progress_steps) * 100))
+        time.sleep(0.3)
+    progress_text.text("正在汇总结果...")
 
-            result = single_scan(url_input.strip())
-            progress_bar.progress(100)
-            progress_text.text("✅ 检测完成！")
+    result = single_scan(url_input.strip())
+    progress_bar.progress(100)
+    progress_text.text("✅ 检测完成！")
 
-            st.success("检测完成 ✅")
+    st.success("检测完成 ✅")
 
-            # --- 总分与风险标签 ---
-            st.metric(label="Cyber Security Score", value=f"{result['total_score']}/100")
-            st.markdown(f"**风险等级：** :red[{result['risk']}]")
+    # --- 总分与风险标签 ---
+    st.metric(label="Cyber Security Score", value=f"{result['total_score']}/100")
+    st.markdown(f"**风险等级：** :red[{result['risk']}]")
 
+    # --- 雷达图展示 ---
+    st.subheader("📈 安全雷达图")
+    subscores = result["subscores"]
+    categories = list(subscores.keys())
+    values = list(subscores.values())
+    N = len(categories)
 
-# --- 雷达图展示 ---
-st.subheader("📈 安全雷达图")
+    values += values[:1]
+    angles = np.linspace(0, 2 * np.pi, N, endpoint=False).tolist()
+    angles += angles[:1]
 
-subscores = result["subscores"]
-categories = list(subscores.keys())
-values = list(subscores.values())
-N = len(categories)
-
-values += values[:1] # 闭合雷达图
-angles = np.linspace(0, 2 * np.pi, N, endpoint=False).tolist()
-angles += angles[:1]
-
-fig, ax = plt.subplots(figsize=(6, 6), subplot_kw=dict(polar=True))
-ax.plot(angles, values, linewidth=2)
-ax.fill(angles, values, alpha=0.25)
-ax.set_xticks(angles[:-1])
-ax.set_xticklabels(categories, fontsize=9)
-ax.set_yticks([20, 40, 60, 80, 100])
-ax.set_yticklabels(["20", "40", "60", "80", "100"])
-ax.set_ylim(0, 100)
-st.pyplot(fig)
+    fig, ax = plt.subplots(figsize=(6, 6), subplot_kw=dict(polar=True))
+    ax.plot(angles, values, linewidth=2)
+    ax.fill(angles, values, alpha=0.25)
+    ax.set_xticks(angles[:-1])
+    ax.set_xticklabels(categories, fontsize=9)
+    ax.set_yticks([20, 40, 60, 80, 100])
+    ax.set_yticklabels(["20", "40", "60", "80", "100"])
+    ax.set_ylim(0, 100)
+    st.pyplot(fig)
 
 # --- 检测报告 ---
 st.subheader("🧾 检测报告摘要")
