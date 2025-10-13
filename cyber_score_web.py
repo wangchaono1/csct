@@ -29,40 +29,40 @@ st.markdown("""
 
 url_input = st.text_input("请输入公司网址：", placeholder="https://example.com")
 
-if st.button("开始检测 🚀"):
-if not url_input.strip():
-st.warning("请输入一个网址。")
-else:
-progress_text = st.empty()
-progress_bar = st.progress(0)
-progress_steps = [
-"初始化扫描...",
-"检测 TLS / HTTPS...",
-"分析安全头部...",
-"检查 HSTS / CSP...",
-"检测混合内容与 Cookies...",
-"检查 DNS SPF / DMARC...",
-"检测开放端口...",
-"汇总结果并生成报告..."
-]
+if st.button("开始检测"):
+    if not url_input.strip():
+        st.warning("请输入一个网址。")
+    else:
+        progress_text = st.empty()
+        progress_bar = st.progress(0)
+        progress_steps = [
+            "初始化扫描...",
+            "检测 TLS / HTTPS...",
+            "分析安全头部...",
+            "检查 HSTS / CSP...",
+            "检测混合内容与 Cookies...",
+            "检查 DNS SPF / DMARC...",
+            "检测开放端口...",
+            "汇总结果并生成报告..."
+        ]
 
-# 模拟进度（同时执行真实扫描）
-try:
-for i, step in enumerate(progress_steps):
-progress_text.text(step)
-progress_bar.progress(int((i + 1) / len(progress_steps) * 100))
-time.sleep(0.3)
-progress_text.text("正在汇总结果...")
+        try:
+            for i, step in enumerate(progress_steps):
+                progress_text.text(step)
+                progress_bar.progress(int((i + 1) / len(progress_steps) * 100))
+                time.sleep(0.3)
+            progress_text.text("正在汇总结果...")
 
-result = single_scan(url_input.strip())
-progress_bar.progress(100)
-progress_text.text("✅ 检测完成！")
+            result = single_scan(url_input.strip())
+            progress_bar.progress(100)
+            progress_text.text("✅ 检测完成！")
 
-st.success("检测完成 ✅")
+            st.success("检测完成 ✅")
 
-# --- 总分与风险标签 ---
-st.metric(label="Cyber Security Score", value=f"{result['total_score']}/100")
-st.markdown(f"**风险等级：** :red[{result['risk']}]")
+            # --- 总分与风险标签 ---
+            st.metric(label="Cyber Security Score", value=f"{result['total_score']}/100")
+            st.markdown(f"**风险等级：** :red[{result['risk']}]")
+
 
 # --- 雷达图展示 ---
 st.subheader("📈 安全雷达图")
