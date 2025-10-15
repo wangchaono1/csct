@@ -9,7 +9,7 @@ from single_target_cyber_score import single_scan
 # -------------------------------------------------------
 # 🔒 Password protection (uses Streamlit Secrets or Env)
 # -------------------------------------------------------
-#PASSWORD = st.secrets.get("PASSWORD") or os.environ.get("PASSWORD")
+#PASSWORD = st.secrets.get("Cybastion") or os.environ.get("Cybastion")
 
 #st.title("🔒 Cyber Security Scoring Tool (Protected Access)")
 #pwd_in = st.text_input("Enter password to access the tool:", type="password")
