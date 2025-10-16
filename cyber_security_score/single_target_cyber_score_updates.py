@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 single_target_cyber_score_updates.py
 Enhanced Cybersecurity Posture Assessment - Legally Compliant Version
@@ -929,19 +928,21 @@ def enhanced_scan(input_url: str) -> Dict:
 
     # Calculate subscores
     subscores = {
-        "tls_certificate": tls_result["score"],
-        "security_headers": headers_result["score"],
-        "hsts_quality": headers_result["header_quality"]
-        .get("HSTS", {})
-        .get("score", 0),
-        "csp_quality": headers_result["header_quality"].get("CSP", {}).get("score", 0),
-        "cookie_security": cookie_result["score"],
-        "dns_security": dns_result["score"],
+        "tls_certificate": int(tls_result["score"]),
+        "security_headers": int(headers_result["score"]),
+        "hsts_quality": int(
+            headers_result["header_quality"].get("HSTS", {}).get("score", 0)
+        ),
+        "csp_quality": int(
+            headers_result["header_quality"].get("CSP", {}).get("score", 0)
+        ),
+        "cookie_security": int(cookie_result["score"]),
+        "dns_security": int(dns_result["score"]),
         "dnssec": 100 if dns_result["dnssec"]["enabled"] else 0,
         "caa_records": 100 if dns_result["caa"]["present"] else 0,
-        "ct_logs": ct_result["score"],
-        "breach_exposure": breach_result["score"],
-        "tech_fingerprint": tech_result["score"],
+        "ct_logs": int(ct_result["score"]),
+        "breach_exposure": int(breach_result["score"]),
+        "tech_fingerprint": int(tech_result["score"]),
     }
 
     results["subscores"] = subscores
@@ -976,7 +977,7 @@ def enhanced_scan(input_url: str) -> Dict:
     print(f"\nCategory Scores:")
     for category, score in subscores.items():
         weight = WEIGHTS.get(category, 0)
-        print(f"  {category:25s}: {score:3d}/100  (weight: {weight:2d}%)")
+        print(f"  {category:25s}: {int(score):3d}/100  (weight: {int(weight):2d}%)")
 
     # Print key issues
     all_issues = []
@@ -1040,7 +1041,7 @@ def print_report(results: Dict):
     # TLS/Certificate
     print("\n🔐 TLS/CERTIFICATE SECURITY")
     tls = results["tls_certificate"]
-    print(f"  Score: {tls['score']}/100")
+    print(f"  Score: {int(tls['score'])}/100")
     print(f"  • TLS Present: {tls['has_tls']}")
     print(f"  • Certificate Valid: {tls['cert_valid']}")
     print(f"  • TLS Version: {tls['tls_version']}")
@@ -1053,7 +1054,7 @@ def print_report(results: Dict):
     # Security Headers
     print("\n🛡️ SECURITY HEADERS")
     headers = results["security_headers"]
-    print(f"  Score: {headers['score']}/100")
+    print(f"  Score: {int(headers['score'])}/100")
     print(f"  • Headers Found: {len(headers['headers_found'])}/{len(CRITICAL_HEADERS)}")
     print(f"  • Present: {list(headers['headers_found'].keys())}")
     print(f"  • Missing: {headers['headers_missing']}")
@@ -1061,7 +1062,7 @@ def print_report(results: Dict):
     # DNS Security
     print("\n📧 DNS SECURITY")
     dns = results["dns_security"]
-    print(f"  Score: {dns['score']}/100")
+    print(f"  Score: {int(dns['score'])}/100")
     print(
         f"  • SPF: {dns['spf']['present']} (Policy: {dns['spf'].get('policy', 'N/A')})"
     )
@@ -1074,7 +1075,7 @@ def print_report(results: Dict):
     # Breach Exposure
     print("\n🚨 BREACH EXPOSURE")
     breach = results["breach_exposure"]
-    print(f"  Score: {breach['score']}/100")
+    print(f"  Score: {int(breach['score'])}/100")
     print(f"  • Known Breaches: {breach['breach_count']}")
     if breach["breach_count"] > 0:
         print(f"  • Most Recent: {breach['most_recent']}")
@@ -1085,14 +1086,14 @@ def print_report(results: Dict):
     # Certificate Transparency
     print("\n📜 CERTIFICATE TRANSPARENCY")
     ct = results["ct_logs"]
-    print(f"  Score: {ct['score']}/100")
+    print(f"  Score: {int(ct['score'])}/100")
     print(f"  • Certificates Found: {ct['certificates_found']}")
     print(f"  • Recent (90 days): {ct['recent_count']}")
 
     # Technology Fingerprinting
     print("\n⚙️ TECHNOLOGY FINGERPRINTING")
     tech = results["tech_fingerprint"]
-    print(f"  Score: {tech['score']}/100")
+    print(f"  Score: {int(tech['score'])}/100")
     print(f"  • Technologies Detected: {list(tech['technologies'].keys())}")
     print(f"  • Vulnerable Technologies: {tech['vulnerable_techs']}")
 
