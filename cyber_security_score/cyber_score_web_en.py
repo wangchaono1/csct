@@ -126,15 +126,18 @@ if start_button:
             else:
                 risk_color = "#6E6E6E"  # gray (fallback)
 
-            # 3️⃣ Render formatted text (centered, large)
+            # 3️⃣ Render formatted text (centered, partial color)
             st.markdown(
                 f"""
                 <div style='text-align:center;'>
-                    <p style='font-size:32px; font-weight:700; color:{score_color}; margin-bottom:0;'>
-                        Cyber Security Score: <span style='color:{score_color};'>{score}</span><span style='color:black;'>/100</span>
+                    <p style='font-size:32px; font-weight:700; margin-bottom:0;'>
+                        <span style='color:black;'>Cyber Security Score: </span>
+                        <span style='color:{score_color};'>{score}</span>
+                        <span style='color:black;'>/100</span>
                     </p>
-                    <p style='font-size:24px; font-weight:600; color:{risk_color}; margin-top:5px;'>
-                        Risk Level: {risk}
+                    <p style='font-size:24px; font-weight:600; margin-top:5px;'>
+                        <span style='color:black;'>Risk Level: </span>
+                        <span style='color:{risk_color};'>{risk}</span>
                     </p>
                 </div>
                 """,
