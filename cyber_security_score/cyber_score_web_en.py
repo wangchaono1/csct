@@ -35,8 +35,7 @@ st.markdown("<br>", unsafe_allow_html=True)
 st.markdown(
     """
 Enter a company or organization's website (for example `example.com` or `https://example.com`).
-The system performs a **cybersecurity assessment**, calculates a **security score (1–100)**,
-and displays a **radar chart**.
+This tool performs a **cybersecurity assessment** and calculates a **security score (1–100)**.
 """
 )
 
@@ -67,7 +66,7 @@ with st.container():
     # Centered button (full-width style)
     col1, col2, col3 = st.columns([1, 1, 1])
     with col2:
-        start_button = st.button("🚀 Start Security Scan", use_container_width=True)
+        start_button = st.button("Start Security Scan", use_container_width=True)
 
 # -------------------------------------------------------
 # Scan workflow logic
