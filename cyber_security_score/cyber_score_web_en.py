@@ -151,16 +151,16 @@ if start_button:
 
             # Friendly labels for client presentation
             friendly_labels = {
-                "tls": "Secure Connection",
-                "headers": "Web Application Security",
-                "hsts": "Site Encryption Policy",
-                "csp": "Content Protection",
-                "mixed_content": "Safe Resource Loading",
-                "cookies": "Data Privacy Controls",
-                "dns_email": "Email Authentication",
-                "mx": "Mail Infrastructure Security",
-                "robots_securitytxt": "Public Info Protection",
-                "ports": "Network Exposure",
+                "tls": "Infrastructure Resilience",
+                "headers": "Application Safeguards",
+                "hsts": "Data Transmission Integrity",
+                "csp": "Information Control Measures",
+                "mixed_content": "Content Consistency",
+                "cookies": "Privacy Protection Practices",
+                "dns_email": "Communication Security",
+                "mx": "Service Reliability",
+                "robots_securitytxt": "Public Configuration Hygiene",
+                "ports": "System Exposure Level",
             }
 
             # Replace keys with client-friendly labels
@@ -184,7 +184,7 @@ if start_button:
 
             # Adjust axes
             ax.set_xticks(angles[:-1])
-            ax.set_xticklabels(categories, fontsize=6.5, fontweight="600", color="#333")
+            ax.set_xticklabels(categories, fontsize=4, fontweight="600", color="#333")
             ax.tick_params(
                 axis="x", pad=12
             )  # push labels away from circle to prevent overlap
@@ -249,16 +249,16 @@ if start_button:
 
             # Use same friendly labels as radar chart
             friendly_labels = {
-                "tls": "Secure Connection",
-                "headers": "Web Application Security",
-                "hsts": "Site Encryption Policy",
-                "csp": "Content Protection",
-                "mixed_content": "Safe Resource Loading",
-                "cookies": "Data Privacy Controls",
-                "dns_email": "Email Authentication",
-                "mx": "Mail Infrastructure Security",
-                "robots_securitytxt": "Public Info Protection",
-                "ports": "Network Exposure",
+                "tls": "Infrastructure Resilience",
+                "headers": "Application Safeguards",
+                "hsts": "Data Transmission Integrity",
+                "csp": "Information Control Measures",
+                "mixed_content": "Content Consistency",
+                "cookies": "Privacy Protection Practices",
+                "dns_email": "Communication Security",
+                "mx": "Service Reliability",
+                "robots_securitytxt": "Public Configuration Hygiene",
+                "ports": "System Exposure Level",
             }
 
             # Replace technical KPI names with friendly names
