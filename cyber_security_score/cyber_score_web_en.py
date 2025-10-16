@@ -131,7 +131,7 @@ if start_button:
                 f"""
                 <div style='text-align:center;'>
                     <p style='font-size:32px; font-weight:700; margin-bottom:0;'>
-                        <span style='color:black;'>Cyber Security Score: </span>
+                        <span style='color:black;'>Score: </span>
                         <span style='color:{score_color};'>{score}</span>
                         <span style='color:black;'>/100</span>
                     </p>
@@ -145,7 +145,7 @@ if start_button:
             )
 
             # --- Security Radar Chart (optimized professional style) ---
-            st.subheader("📈 Security Radar Chart")
+            st.subheader("Security Radar Chart")
 
             subscores = result["subscores"]
 
@@ -199,14 +199,14 @@ if start_button:
             ax.spines["polar"].set_visible(False)
             ax.grid(True, linestyle="--", linewidth=0.6, alpha=0.7)
 
-            # Add subtle title for visual separation
-            ax.set_title(
-                "Overall Cybersecurity Dimensions",
-                va="bottom",
-                fontsize=9,
-                color="#1565C0",
-                pad=18,
-            )
+            # # Add subtle title for visual separation
+            # ax.set_title(
+            #     "Overall Cybersecurity Dimensions",
+            #     va="bottom",
+            #     fontsize=9,
+            #     color="#1565C0",
+            #     pad=18,
+            # )
 
             # Final render
             st.pyplot(fig)
