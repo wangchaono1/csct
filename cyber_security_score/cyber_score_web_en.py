@@ -1,0 +1,169 @@
+import os
+import streamlit as st
+import json
+import time
+import matplotlib.pyplot as plt
+import numpy as np
+from single_target_cyber_score import single_scan
+
+# -------------------------------------------------------
+# 🔒 Password protection (optional)
+# -------------------------------------------------------
+# PASSWORD = st.secrets.get("PASSWORD") or os.environ.get("PASSWORD")
+# st.title("🔒 Cyber Security Scoring Tool (Protected Access)")
+# pwd_in = st.text_input("Enter password to access the tool:", type="password")
+# if not PASSWORD or pwd_in != PASSWORD:
+#     st.warning("🚫 Incorrect or missing password. Ask the owner for access.")
+#     st.stop()
+
+# -------------------------------------------------------
+# Streamlit Page Configuration
+# -------------------------------------------------------
+st.set_page_config(page_title="Cyber Security Scoring Tool", layout="wide")
+
+st.markdown(
+    """
+Enter a company or organization's website (for example `example.com` or `https://example.com`).
+The system performs a **non-intrusive cybersecurity assessment**, calculates a **security score (1–100)**,
+and displays a **radar chart** and **recommendations for improvement**.
+"""
+)
+
+url_input = st.text_input("Enter website URL:", placeholder="https://example.com")
+
+# -------------------------------------------------------
+# Main workflow
+# -------------------------------------------------------
+if st.button("Start Scan 🚀"):
+    if not url_input.strip():
+        st.warning("Please enter a valid website.")
+    else:
+        progress_text = st.empty()
+        progress_bar = st.progress(0)
+        progress_steps = [
+            "Initializing scan...",
+            "Checking TLS / HTTPS...",
+            "Analyzing security headers...",
+            "Checking HSTS / CSP policies...",
+            "Checking mixed content and cookies...",
+            "Verifying DNS SPF / DMARC...",
+            "Checking open ports...",
+            "Aggregating results and generating report...",
+        ]
+
+        try:
+            # --- Simulate progress bar ---
+            for i, step in enumerate(progress_steps):
+                progress_text.text(step)
+                progress_bar.progress(int((i + 1) / len(progress_steps) * 100))
+                time.sleep(0.3)
+            progress_text.text("Finalizing results...")
+
+            # --- Perform the real scan ---
+            result = single_scan(url_input.strip())
+            progress_bar.progress(100)
+            progress_text.text("✅ Scan completed!")
+
+            st.success("Scan completed successfully ✅")
+
+            # --- Overall score and risk level ---
+            st.metric(
+                label="Cyber Security Score", value=f"{result['total_score']}/100"
+            )
+            st.markdown(f"**Risk level:** :red[{result['risk']}]")
+
+            # --- Radar chart visualization ---
+            st.subheader("📈 Security Radar Chart")
+            subscores = result["subscores"]
+            categories = list(subscores.keys())
+            values = list(subscores.values())
+            N = len(categories)
+            values += values[:1]
+            angles = np.linspace(0, 2 * np.pi, N, endpoint=False).tolist()
+            angles += angles[:1]
+
+            fig, ax = plt.subplots(figsize=(6, 6), subplot_kw=dict(polar=True))
+            ax.plot(angles, values, linewidth=2)
+            ax.fill(angles, values, alpha=0.25)
+            ax.set_xticks(angles[:-1])
+            ax.set_xticklabels(categories, fontsize=9)
+            ax.set_yticks([20, 40, 60, 80, 100])
+            ax.set_yticklabels(["20", "40", "60", "80", "100"])
+            ax.set_ylim(0, 100)
+            st.pyplot(fig)
+
+            # --- Report summary ---
+            st.subheader("🧾 Summary Report")
+            col1, col2 = st.columns(2)
+
+            tls = result["tls"]
+            headers = result["headers_analysis"]
+
+            with col1:
+                st.markdown(
+                    f"**TLS:** {'✅ Enabled' if tls['present'] else '❌ Not enabled'}"
+                )
+                st.markdown(f"- Verification status: {tls['verified']}")
+                st.markdown(f"- TLS version: {tls['tls_version']}")
+                st.markdown(f"- Certificate valid days left: {tls.get('days_left')}")
+                st.markdown(
+                    f"**Security headers found:** {list(headers['found_headers'].keys())}"
+                )
+                st.markdown(f"**Server Header:** {headers['server']}")
+                st.markdown(f"**Cookies Flags:** {headers['cookies']}")
+
+            with col2:
+                st.markdown(f"**HSTS:** {result['hsts_value']}")
+                st.markdown(
+                    f"**CSP:** {'✅ Present' if result['csp_value'] else '❌ Missing'}"
+                )
+                st.markdown(
+                    f"**Mixed Content:** {('Unknown' if result['mixed_content'] is None else ('⚠️ Found' if result['mixed_content'] else '✅ None'))}"
+                )
+                st.markdown(f"**SPF:** {result['spf']}")
+                st.markdown(f"**DMARC:** {result['dmarc']}")
+                st.markdown(f"**MX Records:** {result['mx']}")
+                st.markdown(f"**Open Ports:** {result['open_ports']}")
+
+            # --- Subscores table ---
+            st.subheader("📊 Subscores (0–100)")
+            st.table([{"Category": k, "Score": v} for k, v in subscores.items()])
+
+            # --- Recommendations ---
+            st.subheader("🛠 Recommendations and Improvements")
+            recs = []
+            if not tls["present"]:
+                recs.append("Enable HTTPS (TLS) to protect data in transit.")
+            elif tls["verified"] is False:
+                recs.append(
+                    "TLS certificate is not verified by a trusted CA. Check the certificate chain."
+                )
+            elif tls.get("days_left") and tls["days_left"] < 30:
+                recs.append("Certificate will expire soon. Renew promptly.")
+            if result["subscores"]["hsts"] < 50:
+                recs.append("Add or extend HSTS (recommended max-age ≥ 1 year).")
+            if result["subscores"]["csp"] < 50:
+                recs.append(
+                    "Implement a strong Content-Security-Policy to prevent XSS."
+                )
+            if result["subscores"]["mixed_content"] == 0:
+                recs.append("Fix mixed content (HTTPS pages loading HTTP resources).")
+            if result["subscores"]["cookies"] < 80:
+                recs.append("Ensure cookies use Secure and HttpOnly flags.")
+            if result["subscores"]["dns_email"] < 100:
+                recs.append("Add or validate SPF / DMARC DNS records.")
+            if result["subscores"]["ports"] < 80:
+                recs.append("Review exposed ports and firewall configurations.")
+
+            if recs:
+                for r in recs:
+                    st.markdown(f"- {r}")
+            else:
+                st.markdown("✅ No major improvement recommendations found.")
+
+            # --- View raw JSON results ---
+            with st.expander("📂 View full raw results (JSON)"):
+                st.json(result)
+
+        except Exception as e:
+            st.error(f"Scan failed: {e}")

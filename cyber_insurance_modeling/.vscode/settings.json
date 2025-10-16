@@ -1,15 +1,9 @@
 {
-  // ✅ 告诉 VS Code 使用项目的虚拟环境
-  "python.defaultInterpreterPath": "venv/bin/python",
-  // ✅ 如果你用 Code Runner，也强制它使用 venv
-  "code-runner.executorMap": {
-    "python": "${workspaceFolder}/venv/bin/python -u"
-  },
-  "code-runner.runInTerminal": true,
-  // ✅ 格式化和 Lint 设置
+  "python.defaultInterpreterPath": "/Users/chao.wang/cyber-security-score/cyber_insurance_modeling/venv/bin/python",
+  "python.terminal.activateEnvironment": true,
+  "python.terminal.activateEnvInCurrentTerminal": true,
   "python.formatting.provider": "black",
   "editor.formatOnSave": true,
   "python.linting.enabled": true,
-  "python.linting.flake8Enabled": true,
-  "python.analysis.typeCheckingMode": "basic"
+  "python.linting.flake8Enabled": true
 }

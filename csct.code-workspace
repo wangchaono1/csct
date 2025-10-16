@@ -1,0 +1,10 @@
+{
+  "folders": [
+    { "path": "cyber_security_score" },
+    { "path": "cyber_insurance_modeling" }
+  ],
+  "settings": {
+    "python.terminal.activateEnvironment": true
+  }
+}
+

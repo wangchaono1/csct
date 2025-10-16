@@ -39,7 +39,15 @@ class ScenarioN5Params:
     omega_v: float = 10.0  # initial wealth
     a: float = 2.0  # Beta shape
     b: float = 4.0  # Beta shape
-    c: float = 0.001  # infection cost rate
+
+    # c could be the adjustbale parameter and related to the cyber security score:
+    # lower cyber security score drives higher c value therefore higer insurance premium
+    # relation: c=f(100-score), c_min=0.001, c_max is around 0.0035 such that insurance premium is capped by 10%?
+    # premium is increasing function of c, c1 and c2.
+
+    # c: float = 0.001  # infection cost rate
+    c: float = 0.0035
+
     c1: float = 0.1e-6  # fixed recovery cost
     c2: float = 0.5e-4  # time-based recovery cost
 
@@ -547,26 +555,43 @@ def print_results(results: Dict, params: ScenarioN5Params, A: np.ndarray):
 
 # Example: Use Figure 1 network
 if __name__ == "__main__":
+    #    A = np.array(
+    #        [
+    #            [0, 1, 1, 0, 1, 0, 0, 1, 0, 0],
+    #            [1, 0, 1, 1, 1, 0, 0, 0, 0, 0],
+    #            [1, 1, 0, 0, 1, 1, 1, 1, 1, 1],
+    #            [0, 1, 0, 0, 0, 0, 0, 0, 0, 0],
+    #            [1, 1, 1, 0, 0, 1, 0, 0, 0, 1],
+    #            [0, 0, 1, 0, 1, 0, 1, 0, 1, 0],
+    #            [0, 0, 1, 0, 0, 1, 0, 0, 1, 0],
+    #            [1, 0, 1, 0, 0, 0, 0, 0, 0, 0],
+    #            [0, 0, 1, 0, 0, 1, 1, 0, 0, 0],
+    #            [0, 0, 1, 0, 1, 0, 0, 0, 0, 0],
+    #        ]
+    #    )
+
     A = np.array(
         [
-            [0, 1, 1, 0, 1, 0, 0, 1, 0, 0],
-            [1, 0, 1, 1, 1, 0, 0, 0, 0, 0],
-            [1, 1, 0, 0, 1, 1, 1, 1, 1, 1],
-            [0, 1, 0, 0, 0, 0, 0, 0, 0, 0],
-            [1, 1, 1, 0, 0, 1, 0, 0, 0, 1],
-            [0, 0, 1, 0, 1, 0, 1, 0, 1, 0],
-            [0, 0, 1, 0, 0, 1, 0, 0, 1, 0],
-            [1, 0, 1, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 1, 0, 0, 1, 1, 0, 0, 0],
-            [0, 0, 1, 0, 1, 0, 0, 0, 0, 0],
+            [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+            [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+            [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+            [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+            [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+            [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+            [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+            [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+            [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+            [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
         ]
     )
 
     # ========== SIMPLE USAGE: JUST CHANGE THIS PARAMETER ==========
 
     # Option 1: Standard Deviation Principle (Eq. 4.2)
-    # PREMIUM_PRINCIPLE = "standard_deviation"  # Change to "equivalent_utility" for Eq. 4.3
-    PREMIUM_PRINCIPLE = "equivalent_utility"
+    PREMIUM_PRINCIPLE = (
+        "standard_deviation"  # Change to "equivalent_utility" for Eq. 4.3
+    )
+    # PREMIUM_PRINCIPLE = "equivalent_utility"
 
     # ===============================================================
 
