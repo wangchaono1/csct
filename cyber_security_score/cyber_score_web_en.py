@@ -35,7 +35,7 @@ st.markdown("<br>", unsafe_allow_html=True)
 st.markdown(
     """
 Enter a company or organization's website (for example `example.com` or `https://example.com`).
-This tool performs a **cybersecurity assessment** and calculates a **security score (1–100)**.
+This tool performs a **cybersecurity assessment** and calculates a **security score (0–100)**.
 """
 )
 
