@@ -13,7 +13,7 @@ from single_target_cyber_score import single_scan
 # st.title("🔒 Cyber Security Scoring Tool (Protected Access)")
 # pwd_in = st.text_input("Enter password to access the tool:", type="password")
 # if not PASSWORD or pwd_in != PASSWORD:
-#     st.warning("🚫 Incorrect or missing password. Ask the owner for access.")
+#     st.warning("Incorrect or missing password. Ask the owner for access.")
 #     st.stop()
 
 # -------------------------------------------------------
@@ -64,17 +64,6 @@ with st.form(key="scan_form"):
         start_button = st.form_submit_button(
             "Start Security Scan", use_container_width=True
         )
-
-# -------------------------------------------------------
-# Scan workflow logic
-# -------------------------------------------------------
-if start_button:
-    if not url_input.strip():
-        st.warning("Please enter a valid website.")
-    else:
-        # (your scan workflow code here)
-        ...
-
 
 # -------------------------------------------------------
 # Scan workflow logic
