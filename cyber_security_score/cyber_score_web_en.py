@@ -39,22 +39,18 @@ This tool performs a **cybersecurity assessment** and calculates a **security sc
 """
 )
 
-# -------------------------------------------------------
-# Main workflow (improved UI version)
-# -------------------------------------------------------
-
 # Centered, styled title and input box
-with st.container():
-    st.markdown(
-        """
-        <h3 style='text-align:center; color:#1E88E5; font-weight:600;'>
-            🌐 Enter Website URL
-        </h3>
-        """,
-        unsafe_allow_html=True,
-    )
+# -------------------------------------------------------
+# Main workflow (with Enter-to-run support)
+# -------------------------------------------------------
 
-    # Center the input box itself
+st.markdown(
+    "<h3 style='text-align:center; color:#1E88E5; font-weight:600;'>🌐 Enter Website URL</h3>",
+    unsafe_allow_html=True,
+)
+
+# Use a form so hitting Enter submits it automatically
+with st.form(key="scan_form"):
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
         url_input = st.text_input(
@@ -63,10 +59,22 @@ with st.container():
 
     st.markdown("<br>", unsafe_allow_html=True)
 
-    # Centered button (full-width style)
     col1, col2, col3 = st.columns([1, 1, 1])
     with col2:
-        start_button = st.button("Start Security Scan", use_container_width=True)
+        start_button = st.form_submit_button(
+            "Start Security Scan", use_container_width=True
+        )
+
+# -------------------------------------------------------
+# Scan workflow logic
+# -------------------------------------------------------
+if start_button:
+    if not url_input.strip():
+        st.warning("Please enter a valid website.")
+    else:
+        # (your scan workflow code here)
+        ...
+
 
 # -------------------------------------------------------
 # Scan workflow logic
