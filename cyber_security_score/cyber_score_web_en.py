@@ -156,11 +156,11 @@ if start_button:
                 "hsts": "Data Transmission Integrity",
                 "csp": "Information Control Measures",
                 "mixed_content": "Content Consistency",
-                "cookies": "Privacy Protection Practices",
+                "cookies": "Privacy Protection",
                 "dns_email": "Communication Security",
                 "mx": "Service Reliability",
                 "robots_securitytxt": "Public Configuration Hygiene",
-                "ports": "System Exposure Level",
+                "ports": "System Exposure",
             }
 
             # Replace keys with client-friendly labels
@@ -254,11 +254,11 @@ if start_button:
                 "hsts": "Data Transmission Integrity",
                 "csp": "Information Control Measures",
                 "mixed_content": "Content Consistency",
-                "cookies": "Privacy Protection Practices",
+                "cookies": "Privacy Protection",
                 "dns_email": "Communication Security",
                 "mx": "Service Reliability",
                 "robots_securitytxt": "Public Configuration Hygiene",
-                "ports": "System Exposure Level",
+                "ports": "System Exposure",
             }
 
             # Replace technical KPI names with friendly names
