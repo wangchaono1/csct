@@ -24,7 +24,7 @@ st.set_page_config(page_title="Cyber Security Scoring Tool", layout="wide")
 st.markdown(
     """
     <h1 style='text-align:center; color:#1E88E5; font-weight:700;'>
-        🔒 Cyber Security Scoring Tool
+        Cyber Security Scoring Tool
     </h1>
     """,
     unsafe_allow_html=True,
