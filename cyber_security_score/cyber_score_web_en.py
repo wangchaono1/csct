@@ -21,6 +21,8 @@ from single_target_cyber_score import single_scan
 # -------------------------------------------------------
 st.set_page_config(page_title="Cyber Security Scoring Tool", layout="wide")
 
+st.title("Cyber Security Scoring Tool")
+
 st.markdown(
     """
 Enter a company or organization's website (for example `example.com` or `https://example.com`).
@@ -73,18 +75,37 @@ if st.button("Start Scan 🚀"):
             st.markdown(f"**Risk level:** :red[{result['risk']}]")
 
             # --- Radar chart visualization ---
-            st.subheader("📈 Security Radar Chart")
+            st.subheader("Security Radar Chart")
+
             subscores = result["subscores"]
-            categories = list(subscores.keys())
+
+            # Friendly labels for client presentation
+            friendly_labels = {
+                "tls": "Secure Connection",
+                "headers": "Web Application Security",
+                "hsts": "Site Encryption Policy",
+                "csp": "Content Protection",
+                "mixed_content": "Safe Resource Loading",
+                "cookies": "Data Privacy Controls",
+                "dns_email": "Email Authentication",
+                "mx": "Mail Infrastructure Security",
+                "robots_securitytxt": "Public Info Protection",
+                "ports": "Network Exposure",
+            }
+
+            categories = [friendly_labels.get(k, k) for k in subscores.keys()]
             values = list(subscores.values())
             N = len(categories)
             values += values[:1]
             angles = np.linspace(0, 2 * np.pi, N, endpoint=False).tolist()
             angles += angles[:1]
 
-            fig, ax = plt.subplots(figsize=(6, 6), subplot_kw=dict(polar=True))
-            ax.plot(angles, values, linewidth=2)
-            ax.fill(angles, values, alpha=0.25)
+            plt.style.use("seaborn-v0_8-whitegrid")
+
+            # Smaller and more elegant radar chart
+            fig, ax = plt.subplots(figsize=(4.5, 4.5), subplot_kw=dict(polar=True))
+            ax.plot(angles, values, linewidth=2, color="#1E88E5")
+            ax.fill(angles, values, alpha=0.25, color="#64B5F6")
             ax.set_xticks(angles[:-1])
             ax.set_xticklabels(categories, fontsize=9)
             ax.set_yticks([20, 40, 60, 80, 100])
@@ -92,78 +113,99 @@ if st.button("Start Scan 🚀"):
             ax.set_ylim(0, 100)
             st.pyplot(fig)
 
-            # --- Report summary ---
-            st.subheader("🧾 Summary Report")
-            col1, col2 = st.columns(2)
+            # # --- Report summary ---
+            # st.subheader("🧾 Summary Report")
+            # col1, col2 = st.columns(2)
 
-            tls = result["tls"]
-            headers = result["headers_analysis"]
+            # tls = result["tls"]
+            # headers = result["headers_analysis"]
 
-            with col1:
-                st.markdown(
-                    f"**TLS:** {'✅ Enabled' if tls['present'] else '❌ Not enabled'}"
-                )
-                st.markdown(f"- Verification status: {tls['verified']}")
-                st.markdown(f"- TLS version: {tls['tls_version']}")
-                st.markdown(f"- Certificate valid days left: {tls.get('days_left')}")
-                st.markdown(
-                    f"**Security headers found:** {list(headers['found_headers'].keys())}"
-                )
-                st.markdown(f"**Server Header:** {headers['server']}")
-                st.markdown(f"**Cookies Flags:** {headers['cookies']}")
+            # with col1:
+            #     st.markdown(
+            #         f"**TLS:** {'✅ Enabled' if tls['present'] else '❌ Not enabled'}"
+            #     )
+            #     st.markdown(f"- Verification status: {tls['verified']}")
+            #     st.markdown(f"- TLS version: {tls['tls_version']}")
+            #     st.markdown(f"- Certificate valid days left: {tls.get('days_left')}")
+            #     st.markdown(
+            #         f"**Security headers found:** {list(headers['found_headers'].keys())}"
+            #     )
+            #     st.markdown(f"**Server Header:** {headers['server']}")
+            #     st.markdown(f"**Cookies Flags:** {headers['cookies']}")
 
-            with col2:
-                st.markdown(f"**HSTS:** {result['hsts_value']}")
-                st.markdown(
-                    f"**CSP:** {'✅ Present' if result['csp_value'] else '❌ Missing'}"
-                )
-                st.markdown(
-                    f"**Mixed Content:** {('Unknown' if result['mixed_content'] is None else ('⚠️ Found' if result['mixed_content'] else '✅ None'))}"
-                )
-                st.markdown(f"**SPF:** {result['spf']}")
-                st.markdown(f"**DMARC:** {result['dmarc']}")
-                st.markdown(f"**MX Records:** {result['mx']}")
-                st.markdown(f"**Open Ports:** {result['open_ports']}")
+            # with col2:
+            #     st.markdown(f"**HSTS:** {result['hsts_value']}")
+            #     st.markdown(
+            #         f"**CSP:** {'✅ Present' if result['csp_value'] else '❌ Missing'}"
+            #     )
+            #     st.markdown(
+            #         f"**Mixed Content:** {('Unknown' if result['mixed_content'] is None else ('⚠️ Found' if result['mixed_content'] else '✅ None'))}"
+            #     )
+            #     st.markdown(f"**SPF:** {result['spf']}")
+            #     st.markdown(f"**DMARC:** {result['dmarc']}")
+            #     st.markdown(f"**MX Records:** {result['mx']}")
+            #     st.markdown(f"**Open Ports:** {result['open_ports']}")
 
             # --- Subscores table ---
-            st.subheader("📊 Subscores (0–100)")
-            st.table([{"Category": k, "Score": v} for k, v in subscores.items()])
+            st.subheader("Subscores Table (0–100)")
 
-            # --- Recommendations ---
-            st.subheader("🛠 Recommendations and Improvements")
-            recs = []
-            if not tls["present"]:
-                recs.append("Enable HTTPS (TLS) to protect data in transit.")
-            elif tls["verified"] is False:
-                recs.append(
-                    "TLS certificate is not verified by a trusted CA. Check the certificate chain."
-                )
-            elif tls.get("days_left") and tls["days_left"] < 30:
-                recs.append("Certificate will expire soon. Renew promptly.")
-            if result["subscores"]["hsts"] < 50:
-                recs.append("Add or extend HSTS (recommended max-age ≥ 1 year).")
-            if result["subscores"]["csp"] < 50:
-                recs.append(
-                    "Implement a strong Content-Security-Policy to prevent XSS."
-                )
-            if result["subscores"]["mixed_content"] == 0:
-                recs.append("Fix mixed content (HTTPS pages loading HTTP resources).")
-            if result["subscores"]["cookies"] < 80:
-                recs.append("Ensure cookies use Secure and HttpOnly flags.")
-            if result["subscores"]["dns_email"] < 100:
-                recs.append("Add or validate SPF / DMARC DNS records.")
-            if result["subscores"]["ports"] < 80:
-                recs.append("Review exposed ports and firewall configurations.")
+            # Use same friendly labels as radar chart
+            friendly_labels = {
+                "tls": "Secure Connection",
+                "headers": "Web Application Security",
+                "hsts": "Site Encryption Policy",
+                "csp": "Content Protection",
+                "mixed_content": "Safe Resource Loading",
+                "cookies": "Data Privacy Controls",
+                "dns_email": "Email Authentication",
+                "mx": "Mail Infrastructure Security",
+                "robots_securitytxt": "Public Info Protection",
+                "ports": "Network Exposure",
+            }
 
-            if recs:
-                for r in recs:
-                    st.markdown(f"- {r}")
-            else:
-                st.markdown("✅ No major improvement recommendations found.")
+            # Replace technical KPI names with friendly names
+            table_data = [
+                {"Category": friendly_labels.get(k, k), "Score": v}
+                for k, v in subscores.items()
+            ]
 
-            # --- View raw JSON results ---
-            with st.expander("📂 View full raw results (JSON)"):
-                st.json(result)
+            st.table(table_data)
+
+            # # --- Recommendations ---
+            # st.subheader("🛠 Recommendations and Improvements")
+            # recs = []
+            # if not tls["present"]:
+            #     recs.append("Enable HTTPS (TLS) to protect data in transit.")
+            # elif tls["verified"] is False:
+            #     recs.append(
+            #         "TLS certificate is not verified by a trusted CA. Check the certificate chain."
+            #     )
+            # elif tls.get("days_left") and tls["days_left"] < 30:
+            #     recs.append("Certificate will expire soon. Renew promptly.")
+            # if result["subscores"]["hsts"] < 50:
+            #     recs.append("Add or extend HSTS (recommended max-age ≥ 1 year).")
+            # if result["subscores"]["csp"] < 50:
+            #     recs.append(
+            #         "Implement a strong Content-Security-Policy to prevent XSS."
+            #     )
+            # if result["subscores"]["mixed_content"] == 0:
+            #     recs.append("Fix mixed content (HTTPS pages loading HTTP resources).")
+            # if result["subscores"]["cookies"] < 80:
+            #     recs.append("Ensure cookies use Secure and HttpOnly flags.")
+            # if result["subscores"]["dns_email"] < 100:
+            #     recs.append("Add or validate SPF / DMARC DNS records.")
+            # if result["subscores"]["ports"] < 80:
+            #     recs.append("Review exposed ports and firewall configurations.")
+
+            # if recs:
+            #     for r in recs:
+            #         st.markdown(f"- {r}")
+            # else:
+            #     st.markdown("✅ No major improvement recommendations found.")
+
+            # # --- View raw JSON results ---
+            # with st.expander("📂 View full raw results (JSON)"):
+            #     st.json(result)
 
         except Exception as e:
             st.error(f"Scan failed: {e}")
