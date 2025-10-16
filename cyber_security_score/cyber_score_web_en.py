@@ -144,8 +144,8 @@ if start_button:
                 unsafe_allow_html=True,
             )
 
-            # --- Radar chart visualization ---
-            st.subheader("Security Radar Chart")
+            # --- Security Radar Chart (optimized professional style) ---
+            st.subheader("📈 Security Radar Chart")
 
             subscores = result["subscores"]
 
@@ -163,24 +163,52 @@ if start_button:
                 "ports": "Network Exposure",
             }
 
+            # Replace keys with client-friendly labels
             categories = [friendly_labels.get(k, k) for k in subscores.keys()]
             values = list(subscores.values())
             N = len(categories)
+
+            # Close radar loop
             values += values[:1]
             angles = np.linspace(0, 2 * np.pi, N, endpoint=False).tolist()
             angles += angles[:1]
 
+            # --- Styling ---
             plt.style.use("seaborn-v0_8-whitegrid")
 
-            # Smaller and more elegant radar chart
-            fig, ax = plt.subplots(figsize=(3, 3), subplot_kw=dict(polar=True))
-            ax.plot(angles, values, linewidth=2, color="#1E88E5")
-            ax.fill(angles, values, alpha=0.25, color="#64B5F6")
+            fig, ax = plt.subplots(figsize=(4.2, 4.2), subplot_kw=dict(polar=True))
+
+            # Plot
+            ax.plot(angles, values, linewidth=2.5, color="#1565C0", alpha=0.9)
+            ax.fill(angles, values, color="#64B5F6", alpha=0.3)
+
+            # Adjust axes
             ax.set_xticks(angles[:-1])
-            ax.set_xticklabels(categories, fontsize=5)
+            ax.set_xticklabels(categories, fontsize=6.5, fontweight="600", color="#333")
+            ax.tick_params(
+                axis="x", pad=12
+            )  # push labels away from circle to prevent overlap
+
             ax.set_yticks([20, 40, 60, 80, 100])
-            ax.set_yticklabels(["20", "40", "60", "80", "100"])
+            ax.set_yticklabels(
+                ["20", "40", "60", "80", "100"], fontsize=6.5, color="#555"
+            )
             ax.set_ylim(0, 100)
+
+            # Remove polar spine (outer circle)
+            ax.spines["polar"].set_visible(False)
+            ax.grid(True, linestyle="--", linewidth=0.6, alpha=0.7)
+
+            # Add subtle title for visual separation
+            ax.set_title(
+                "Overall Cybersecurity Dimensions",
+                va="bottom",
+                fontsize=9,
+                color="#1565C0",
+                pad=18,
+            )
+
+            # Final render
             st.pyplot(fig)
 
             # # --- Report summary ---
