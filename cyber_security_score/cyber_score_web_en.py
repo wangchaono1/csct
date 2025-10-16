@@ -21,13 +21,22 @@ from single_target_cyber_score import single_scan
 # -------------------------------------------------------
 st.set_page_config(page_title="Cyber Security Scoring Tool", layout="wide")
 
-st.title("Cyber Security Scoring Tool")
+st.markdown(
+    """
+    <h1 style='text-align:center; color:#1E88E5; font-weight:700;'>
+        🔒 Cyber Security Scoring Tool
+    </h1>
+    """,
+    unsafe_allow_html=True,
+)
+
+st.markdown("<br>", unsafe_allow_html=True)
 
 st.markdown(
     """
 Enter a company or organization's website (for example `example.com` or `https://example.com`).
-The system performs a **non-intrusive cybersecurity assessment**, calculates a **security score (1–100)**,
-and displays a **radar chart** and **recommendations for improvement**.
+The system performs a **cybersecurity assessment**, calculates a **security score (1–100)**,
+and displays a **radar chart**.
 """
 )
 
@@ -95,18 +104,38 @@ if start_button:
 
             st.success("Scan completed successfully ✅")
 
-            # ... your result display code continues here ...
+            # --- Dynamic color display for score and risk level ---
+            score = result["total_score"]
+            risk = result["risk"]
 
-            # --- Overall score and risk level ---
-            # --- Score & Risk display with larger font ---
+            # 1️⃣ Choose color based on score
+            if score < 40:
+                score_color = "#D32F2F"  # red
+            elif score <= 80:
+                score_color = "#F9A825"  # yellow
+            else:
+                score_color = "#388E3C"  # green
+
+            # 2️⃣ Choose color based on risk level
+            risk_lower = str(risk).lower()
+            if "critical" in risk_lower:
+                risk_color = "#D32F2F"  # red
+            elif "medium" in risk_lower:
+                risk_color = "#F9A825"  # yellow
+            elif "low" in risk_lower:
+                risk_color = "#388E3C"  # green
+            else:
+                risk_color = "#6E6E6E"  # gray (fallback)
+
+            # 3️⃣ Render formatted text (centered, large)
             st.markdown(
                 f"""
                 <div style='text-align:center;'>
-                    <p style='font-size:32px; font-weight:700; color:#1E88E5; margin-bottom:0;'>
-                        Cyber Security Score: {result['total_score']}/100
+                    <p style='font-size:32px; font-weight:700; color:{score_color}; margin-bottom:0;'>
+                        Cyber Security Score: <span style='color:{score_color};'>{score}</span><span style='color:black;'>/100</span>
                     </p>
-                    <p style='font-size:24px; font-weight:600; color:#D32F2F; margin-top:5px;'>
-                        Risk Level: {result['risk']}
+                    <p style='font-size:24px; font-weight:600; color:{risk_color}; margin-top:5px;'>
+                        Risk Level: {risk}
                     </p>
                 </div>
                 """,
@@ -142,11 +171,11 @@ if start_button:
             plt.style.use("seaborn-v0_8-whitegrid")
 
             # Smaller and more elegant radar chart
-            fig, ax = plt.subplots(figsize=(4.5, 4.5), subplot_kw=dict(polar=True))
+            fig, ax = plt.subplots(figsize=(3, 3), subplot_kw=dict(polar=True))
             ax.plot(angles, values, linewidth=2, color="#1E88E5")
             ax.fill(angles, values, alpha=0.25, color="#64B5F6")
             ax.set_xticks(angles[:-1])
-            ax.set_xticklabels(categories, fontsize=6)
+            ax.set_xticklabels(categories, fontsize=5)
             ax.set_yticks([20, 40, 60, 80, 100])
             ax.set_yticklabels(["20", "40", "60", "80", "100"])
             ax.set_ylim(0, 100)
