@@ -31,12 +31,39 @@ and displays a **radar chart** and **recommendations for improvement**.
 """
 )
 
-url_input = st.text_input("Enter website URL:", placeholder="https://example.com")
+# -------------------------------------------------------
+# Main workflow (improved UI version)
+# -------------------------------------------------------
+
+# Centered, styled title and input box
+with st.container():
+    st.markdown(
+        """
+        <h3 style='text-align:center; color:#1E88E5; font-weight:600;'>
+            🌐 Enter Website URL
+        </h3>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    # Center the input box itself
+    col1, col2, col3 = st.columns([1, 2, 1])
+    with col2:
+        url_input = st.text_input(
+            "", placeholder="https://example.com", label_visibility="collapsed"
+        )
+
+    st.markdown("<br>", unsafe_allow_html=True)
+
+    # Centered button (full-width style)
+    col1, col2, col3 = st.columns([1, 1, 1])
+    with col2:
+        start_button = st.button("🚀 Start Security Scan", use_container_width=True)
 
 # -------------------------------------------------------
-# Main workflow
+# Scan workflow logic
 # -------------------------------------------------------
-if st.button("Start Scan 🚀"):
+if start_button:
     if not url_input.strip():
         st.warning("Please enter a valid website.")
     else:
@@ -68,11 +95,23 @@ if st.button("Start Scan 🚀"):
 
             st.success("Scan completed successfully ✅")
 
+            # ... your result display code continues here ...
+
             # --- Overall score and risk level ---
-            st.metric(
-                label="Cyber Security Score", value=f"{result['total_score']}/100"
+            # --- Score & Risk display with larger font ---
+            st.markdown(
+                f"""
+                <div style='text-align:center;'>
+                    <p style='font-size:32px; font-weight:700; color:#1E88E5; margin-bottom:0;'>
+                        Cyber Security Score: {result['total_score']}/100
+                    </p>
+                    <p style='font-size:24px; font-weight:600; color:#D32F2F; margin-top:5px;'>
+                        Risk Level: {result['risk']}
+                    </p>
+                </div>
+                """,
+                unsafe_allow_html=True,
             )
-            st.markdown(f"**Risk level:** :red[{result['risk']}]")
 
             # --- Radar chart visualization ---
             st.subheader("Security Radar Chart")
@@ -107,7 +146,7 @@ if st.button("Start Scan 🚀"):
             ax.plot(angles, values, linewidth=2, color="#1E88E5")
             ax.fill(angles, values, alpha=0.25, color="#64B5F6")
             ax.set_xticks(angles[:-1])
-            ax.set_xticklabels(categories, fontsize=9)
+            ax.set_xticklabels(categories, fontsize=6)
             ax.set_yticks([20, 40, 60, 80, 100])
             ax.set_yticklabels(["20", "40", "60", "80", "100"])
             ax.set_ylim(0, 100)
