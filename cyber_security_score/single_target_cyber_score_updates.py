@@ -1156,57 +1156,64 @@ checks using publicly available information.
 
 
 def main():
-    """Main CLI entry point"""
-    if len(sys.argv) < 2:
-        print(
-            f"""
-Enhanced Cybersecurity Assessment Tool v{VERSION}
-{'='*50}
+    """Main CLI entry point with validation support"""
+    import argparse
 
-Usage:
-    python {sys.argv[0]} <domain>
-
+    parser = argparse.ArgumentParser(
+        description=f"Enhanced Cybersecurity Assessment Tool v{VERSION}",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
 Examples:
-    python {sys.argv[0]} example.com
-    python {sys.argv[0]} https://example.com
+    python single_target_cyber_score_updates.py example.com
+    python single_target_cyber_score_updates.py example.com --validate
+    python single_target_cyber_score_updates.py https://example.com --validate --benchmark
+        """,
+    )
 
-Features:
-    • CVSS-inspired scoring methodology
-    • NIST CSF & CIS Controls alignment
-    • TLS/Certificate analysis
-    • Security headers deep inspection
-    • DNS security (SPF/DMARC/DNSSEC/CAA)
-    • Certificate Transparency monitoring
-    • Breach database checking
-    • Technology fingerprinting
-    • Legally compliant (passive only)
+    parser.add_argument("domain", help="Domain or URL to scan")
+    parser.add_argument(
+        "--validate",
+        action="store_true",
+        help="Include validation report (framework alignment)",
+    )
+    parser.add_argument(
+        "--benchmark",
+        action="store_true",
+        help="Include live benchmarking (slower, requires --validate)",
+    )
 
-Output:
-    • Overall security score (0-100)
-    • Risk classification
-    • Detailed findings per category
-    • Actionable recommendations
-    • JSON export option
-"""
-        )
-        sys.exit(1)
-
-    domain = sys.argv[1]
+    args = parser.parse_args()
 
     try:
         # Perform scan
-        results = enhanced_scan(domain)
+        if args.validate:
+            print("\n🔍 Running scan with validation...\n")
+            results = enhanced_scan(args.domain)
 
-        # Print detailed report
-        print_report(results)
+            # Add validation
+            from validation_module import ValidationEngine
 
-        # Optionally save JSON
-        output_file = f"security_assessment_{domain.replace('https://', '').replace('http://', '').replace('/', '_')}_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}.json"
+            validator = ValidationEngine()
+            validation_report = validator.generate_validation_report(
+                results, include_benchmark=args.benchmark
+            )
 
-        print(f"💾 Saving detailed results to: {output_file}")
-        with open(output_file, "w") as f:
-            json.dump(results, f, indent=2, default=str)
-        print(f"✅ Results saved successfully!\n")
+            results["validation"] = validation_report
+
+            # Print regular report
+            print_report(results)
+
+            # Print validation report
+            print("\n" + "=" * 70)
+            print("VALIDATION REPORT")
+            print("=" * 70)
+            print(validator._format_text_report(validation_report))
+
+        else:
+            results = enhanced_scan(args.domain)
+            print_report(results)
+
+        print("\n✅ Scan complete!\n")
 
     except KeyboardInterrupt:
         print("\n\n⚠️ Scan interrupted by user.")
@@ -1217,6 +1224,47 @@ Output:
 
         traceback.print_exc()
         sys.exit(1)
+
+
+# ============================================================================
+# VALIDATION INTEGRATION (Updated)
+# ============================================================================
+
+
+def enhanced_scan_with_validation(
+    input_url: str, include_validation: bool = False
+) -> Dict:
+    """
+    Enhanced scan with optional validation
+
+    Args:
+        input_url: Domain or URL to scan
+        include_validation: Whether to include validation report
+
+    Returns:
+        Scan results with optional validation data
+    """
+    # Run normal scan
+    results = enhanced_scan(input_url)
+
+    # Add validation if requested
+    if include_validation:
+        try:
+            from validation_module import ValidationEngine
+
+            validator = ValidationEngine()
+            validation_report = validator.generate_validation_report(
+                results, include_benchmark=False  # Set True for live benchmarking
+            )
+
+            results["validation"] = validation_report
+
+        except ImportError:
+            print("⚠️  validation_module.py not found. Skipping validation.")
+        except Exception as e:
+            print(f"⚠️  Validation failed: {e}")
+
+    return results
 
 
 if __name__ == "__main__":

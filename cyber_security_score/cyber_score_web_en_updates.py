@@ -683,6 +683,147 @@ Please ensure:
                 )
 
 # -------------------------------------------------------
+# Validation Section (After Export Options)
+# -------------------------------------------------------
+st.markdown("---")
+st.markdown("### ✅ Model Validation")
+
+with st.expander("📊 Framework Alignment & Benchmarking", expanded=False):
+    st.markdown(
+        """
+    Our scoring methodology is validated against industry-standard frameworks 
+    and independently benchmarked against security rating platforms.
+    """
+    )
+
+    # Add button to generate validation report
+    col1, col2 = st.columns(2)
+
+    with col1:
+        if st.button("🔍 Generate Validation Report", key="validate_btn"):
+            with st.spinner("Validating scoring model..."):
+                try:
+                    from validation_module import ValidationEngine
+
+                    validator = ValidationEngine()
+                    validation_report = validator.generate_validation_report(
+                        result,
+                        include_benchmark=False,  # Set True for live benchmarking (slower)
+                    )
+
+                    # Display framework alignment
+                    st.markdown("#### 📋 Framework Alignment")
+
+                    col_a, col_b, col_c = st.columns(3)
+
+                    with col_a:
+                        nist_cov = validation_report["framework_alignment"]["nist_csf"][
+                            "coverage_percentage"
+                        ]
+                        st.metric("NIST CSF Coverage", f"{nist_cov}%", delta=None)
+                        st.caption(
+                            validation_report["framework_alignment"]["nist_csf"][
+                                "assessment"
+                            ]
+                        )
+
+                    with col_b:
+                        cis_cov = validation_report["framework_alignment"][
+                            "cis_controls"
+                        ]["coverage_percentage"]
+                        st.metric("CIS Controls Coverage", f"{cis_cov}%", delta=None)
+                        st.caption(
+                            validation_report["framework_alignment"]["cis_controls"][
+                                "assessment"
+                            ]
+                        )
+
+                    with col_c:
+                        owasp_cov = validation_report["framework_alignment"]["owasp"][
+                            "coverage_percentage"
+                        ]
+                        st.metric("OWASP Coverage", f"{owasp_cov}%", delta=None)
+                        st.caption(
+                            validation_report["framework_alignment"]["owasp"][
+                                "assessment"
+                            ]
+                        )
+
+                    # Overall validation score
+                    st.markdown("---")
+                    val_score = validation_report["overall_validation"][
+                        "validation_score"
+                    ]
+                    credibility = validation_report["overall_validation"][
+                        "credibility_rating"
+                    ]
+
+                    st.markdown(
+                        f"""
+                    <div style='text-align:center; padding:20px; background:#f0f8ff; border-radius:10px;'>
+                        <h3 style='color:#1565C0;'>Validation Score: {val_score}/100</h3>
+                        <p style='font-size:1.1rem;'>{credibility}</p>
+                    </div>
+                    """,
+                        unsafe_allow_html=True,
+                    )
+
+                    # Strengths and improvements
+                    col1, col2 = st.columns(2)
+
+                    with col1:
+                        st.markdown("**✅ Strengths:**")
+                        for strength in validation_report["overall_validation"][
+                            "strengths"
+                        ]:
+                            st.success(strength)
+
+                    with col2:
+                        if validation_report["overall_validation"][
+                            "areas_for_improvement"
+                        ]:
+                            st.markdown("**📈 Areas for Improvement:**")
+                            for area in validation_report["overall_validation"][
+                                "areas_for_improvement"
+                            ]:
+                                st.info(area)
+
+                    # Download validation report
+                    st.markdown("---")
+                    validation_json = validator.export_validation_report(
+                        validation_report, format="json"
+                    )
+                    st.download_button(
+                        label="📥 Download Validation Report (JSON)",
+                        data=validation_json,
+                        file_name=f"validation_report_{url_input.replace('https://', '').replace('http://', '')}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json",
+                        mime="application/json",
+                    )
+
+                except ImportError:
+                    st.error(
+                        "❌ Validation module not found. Please ensure validation_module.py is in the same directory."
+                    )
+                except Exception as e:
+                    st.error(f"❌ Validation failed: {str(e)}")
+
+    with col2:
+        st.info(
+            """
+        **What is validated:**
+        - NIST CSF 2.0 alignment
+        - CIS Controls v8 mapping
+        - OWASP Top 10 coverage
+        - Benchmark comparison (optional)
+        
+        **Why this matters:**
+        Industry-standard frameworks provide 
+        credibility and ensure comprehensive 
+        security assessment.
+        """
+        )
+
+# -------------------------------------------------------
 # Footer
 # -------------------------------------------------------
 st.markdown("---")
