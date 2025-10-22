@@ -108,7 +108,7 @@ with st.form(key="enhanced_scan_form"):
     col1, col2, col3, col4 = st.columns([0.5, 1, 1, 0.5])
     with col2:
         start_button = st.form_submit_button(
-            "🚀 Start Enhanced Assessment", use_container_width=True
+            "🚀 Start Assessment", use_container_width=True
         )
     with col3:
         validate_button = st.form_submit_button(
@@ -818,12 +818,7 @@ elif validate_button:
         st.info(
             """
         
-        Our scoring methodology is comprehensively validated through:
-        
-        1. **Framework Alignment (50%)** 
-        2. **External Benchmarking (50%)** 
-        
-        ⏳ **Please Note:** This process includes automatic benchmarking against external platforms 
+        This score validation process includes automatic benchmarking against external platforms 
         which may take 2-5 minutes to complete. The validation score is calculated based on BOTH 
         framework alignment AND benchmarking results for maximum credibility.
         """
@@ -1008,7 +1003,7 @@ elif validate_button:
                         f"✅ **Good Framework Alignment:** Average coverage of {avg_framework_cov:.1f}% across major frameworks. "
                         f"The methodology aligns well with industry standards, covering key security domains including "
                         f"asset management, data protection, and threat detection. This coverage level is appropriate "
-                        f"for external security assessments and risk evaluation."
+                        f"for cyber security assessments and risk evaluation."
                     )
                     st.success(assessment_msg)
                 elif avg_framework_cov >= 45:
