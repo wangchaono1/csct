@@ -65,17 +65,21 @@ last_request_time = 0
 
 # Weights aligned with NIST CSF and industry research
 WEIGHTS = {
-    "tls_certificate": 18,  # Identity verification
-    "security_headers": 16,  # Protective measures
-    "hsts_quality": 8,  # Transport security
-    "csp_quality": 10,  # XSS/injection protection
-    "cookie_security": 6,  # Session management
-    "dns_security": 12,  # Email/domain authentication
-    "dnssec": 6,  # DNS integrity
+    "tls_certificate": 16,  # Identity verification
+    "security_headers": 14,  # Protective measures
+    "hsts_quality": 7,  # Transport security
+    "csp_quality": 9,  # XSS/injection protection
+    "cookie_security": 5,  # Session management
+    "dns_security": 11,  # Email/domain authentication
+    "dnssec": 5,  # DNS integrity
     "caa_records": 4,  # Certificate authority authorization
-    "ct_logs": 5,  # Certificate transparency
-    "breach_exposure": 10,  # Historical incidents
-    "tech_fingerprint": 5,  # Technology stack risks
+    "ct_logs": 4,  # Certificate transparency
+    "breach_exposure": 9,  # Historical incidents
+    "tech_fingerprint": 4,  # Technology stack risks
+    "dkim_records": 3,  # Email authentication
+    "mta_sts": 3,  # Email security
+    "https_redirect": 3,  # Force HTTPS
+    "mixed_content": 3,  # HTTPS integrity
 }
 
 # Security headers to check (aligned with OWASP recommendations)
@@ -262,6 +266,291 @@ def analyze_tls_certificate(domain: str) -> Dict:
         result["issues"].append("CRITICAL: No TLS/SSL detected")
 
     result["score"] = min(100, score)
+    return result
+
+
+# ============================================================================
+# DKIM RECORDS CHECK
+# ============================================================================
+
+
+def check_dkim_records(domain: str) -> Dict:
+    """
+    Check for DKIM records using common selectors
+    DKIM requires knowing the selector, so we try common ones
+    """
+    result = {
+        "selectors_found": [],
+        "selectors_tested": [],
+        "score": 0,
+        "issues": [],
+    }
+
+    # Common DKIM selectors used by major email providers
+    common_selectors = [
+        "default",
+        "google",
+        "k1",
+        "k2",
+        "dkim",
+        "selector1",
+        "selector2",
+        "s1",
+        "s2",
+        "mail",
+        "email",
+        "mx",
+    ]
+
+    for selector in common_selectors:
+        result["selectors_tested"].append(selector)
+        try:
+            dkim_domain = f"{selector}._domainkey.{domain}"
+            answers = dns.resolver.resolve(dkim_domain, "TXT", lifetime=TIMEOUT)
+            for rdata in answers:
+                txt = str(rdata).strip('"')
+                if "p=" in txt:  # DKIM public key
+                    result["selectors_found"].append(
+                        {"selector": selector, "record": txt[:100] + "..."}
+                    )
+                    break
+        except Exception:
+            continue
+
+    # Scoring
+    if len(result["selectors_found"]) >= 2:
+        result["score"] = 100
+    elif len(result["selectors_found"]) == 1:
+        result["score"] = 80
+        result["issues"].append(
+            "INFO: Only one DKIM selector found - consider multiple selectors for key rotation"
+        )
+    else:
+        result["score"] = 0
+        result["issues"].append(
+            "WARNING: No DKIM records found with common selectors - email authentication incomplete"
+        )
+
+    return result
+
+
+# ============================================================================
+# MTA-STS CHECK
+# ============================================================================
+
+
+def check_mta_sts(domain: str) -> Dict:
+    """
+    Check for MTA-STS (SMTP TLS enforcement)
+    Checks both DNS record and policy file
+    """
+    result = {
+        "dns_record": None,
+        "policy_file": None,
+        "policy_mode": None,
+        "score": 0,
+        "issues": [],
+    }
+
+    # Check DNS TXT record
+    try:
+        mta_sts_domain = f"_mta-sts.{domain}"
+        answers = dns.resolver.resolve(mta_sts_domain, "TXT", lifetime=TIMEOUT)
+        for rdata in answers:
+            txt = str(rdata).strip('"')
+            if txt.startswith("v=STSv1"):
+                result["dns_record"] = txt
+                break
+    except Exception:
+        result["issues"].append("INFO: No MTA-STS DNS record found")
+
+    # Check policy file
+    if result["dns_record"]:
+        try:
+            rate_limit()
+            policy_url = f"https://mta-sts.{domain}/.well-known/mta-sts.txt"
+            response = requests.get(
+                policy_url,
+                headers={"User-Agent": USER_AGENT},
+                timeout=TIMEOUT,
+                verify=False,
+            )
+
+            if response.status_code == 200:
+                result["policy_file"] = response.text[:200]
+
+                # Parse mode
+                mode_match = re.search(r"mode:\s*(\w+)", response.text, re.IGNORECASE)
+                if mode_match:
+                    result["policy_mode"] = mode_match.group(1)
+
+        except Exception as e:
+            result["issues"].append(f"WARNING: MTA-STS policy file not accessible")
+
+    # Scoring
+    if result["dns_record"] and result["policy_file"]:
+        if result["policy_mode"] == "enforce":
+            result["score"] = 100
+        elif result["policy_mode"] == "testing":
+            result["score"] = 70
+            result["issues"].append("INFO: MTA-STS in testing mode - not yet enforcing")
+        else:
+            result["score"] = 50
+    elif result["dns_record"]:
+        result["score"] = 30
+        result["issues"].append(
+            "WARNING: MTA-STS DNS record exists but policy file missing"
+        )
+    else:
+        result["score"] = 0
+        result["issues"].append(
+            "INFO: MTA-STS not implemented - modern email security not enforced"
+        )
+
+    return result
+
+
+# ============================================================================
+# HTTPS REDIRECT CHECK
+# ============================================================================
+
+
+def check_https_redirect(domain: str) -> Dict:
+    """
+    Check if HTTP redirects to HTTPS
+    Critical for forcing secure connections
+    """
+    result = {
+        "http_accessible": False,
+        "redirects_to_https": False,
+        "redirect_chain": [],
+        "score": 0,
+        "issues": [],
+    }
+
+    try:
+        rate_limit()
+        http_url = f"http://{domain}"
+
+        # Allow redirects and track them
+        response = requests.get(
+            http_url,
+            headers={"User-Agent": USER_AGENT},
+            timeout=TIMEOUT,
+            allow_redirects=True,
+            verify=False,
+        )
+
+        result["http_accessible"] = True
+
+        # Check redirect history
+        if response.history:
+            for resp in response.history:
+                result["redirect_chain"].append(
+                    {
+                        "from": resp.url,
+                        "to": resp.headers.get("Location", ""),
+                        "code": resp.status_code,
+                    }
+                )
+
+            # Check if final URL is HTTPS
+            if response.url.startswith("https://"):
+                result["redirects_to_https"] = True
+                result["score"] = 100
+            else:
+                result["score"] = 0
+                result["issues"].append(
+                    "CRITICAL: HTTP does not redirect to HTTPS - insecure connections allowed"
+                )
+        else:
+            # No redirect happened
+            result["score"] = 0
+            result["issues"].append(
+                "CRITICAL: HTTP accessible without redirect to HTTPS - major security risk"
+            )
+
+    except Exception as e:
+        # HTTP not accessible (could be good - only HTTPS works)
+        result["http_accessible"] = False
+        result["score"] = 100  # Assume HTTPS-only is good
+        result["issues"].append("INFO: HTTP not accessible - likely HTTPS-only (good)")
+
+    return result
+
+
+# ============================================================================
+# MIXED CONTENT DETECTION
+# ============================================================================
+
+
+def check_mixed_content(response: Optional[requests.Response], domain: str) -> Dict:
+    """
+    Detect mixed content (HTTP resources on HTTPS page)
+    Security risk that browsers may block
+    """
+    result = {
+        "is_https": False,
+        "http_resources": [],
+        "resource_types": {},
+        "score": 0,
+        "issues": [],
+    }
+
+    if not response:
+        result["score"] = 100
+        return result
+
+    # Check if page is HTTPS
+    result["is_https"] = response.url.startswith("https://")
+
+    if not result["is_https"]:
+        result["score"] = 100  # Not applicable for HTTP pages
+        result["issues"].append(
+            "INFO: Page is HTTP - mixed content check not applicable"
+        )
+        return result
+
+    # Parse HTML/CSS/JS for HTTP resources
+    content = response.text.lower() if response.text else ""
+
+    # Patterns for different resource types
+    patterns = {
+        "scripts": r'<script[^>]+src=["\'](http://[^"\']+)["\']',
+        "stylesheets": r'<link[^>]+href=["\'](http://[^"\']+)["\']',
+        "images": r'<img[^>]+src=["\'](http://[^"\']+)["\']',
+        "iframes": r'<iframe[^>]+src=["\'](http://[^"\']+)["\']',
+        "media": r'<(?:video|audio)[^>]+src=["\'](http://[^"\']+)["\']',
+        "forms": r'<form[^>]+action=["\'](http://[^"\']+)["\']',
+    }
+
+    for resource_type, pattern in patterns.items():
+        matches = re.findall(pattern, content, re.IGNORECASE)
+        if matches:
+            result["resource_types"][resource_type] = len(matches)
+            result["http_resources"].extend(matches[:5])  # Limit to 5 examples
+
+    # Scoring
+    total_http = sum(result["resource_types"].values())
+
+    if total_http == 0:
+        result["score"] = 100
+    elif total_http <= 2:
+        result["score"] = 60
+        result["issues"].append(
+            f"WARNING: {total_http} HTTP resources found on HTTPS page"
+        )
+    elif total_http <= 5:
+        result["score"] = 30
+        result["issues"].append(
+            f"WARNING: {total_http} HTTP resources found - browsers may block"
+        )
+    else:
+        result["score"] = 0
+        result["issues"].append(
+            f"CRITICAL: {total_http} HTTP resources on HTTPS page - major mixed content issue"
+        )
+
     return result
 
 
@@ -903,6 +1192,9 @@ def enhanced_scan(input_url: str) -> Dict:
             "dns_security": executor.submit(analyze_dns_security, domain),
             "ct_logs": executor.submit(check_certificate_transparency, domain),
             "breach_exposure": executor.submit(check_breach_exposure, domain),
+            "dkim_records": executor.submit(check_dkim_records, domain),
+            "mta_sts": executor.submit(check_mta_sts, domain),
+            "https_redirect": executor.submit(check_https_redirect, domain),
         }
 
         # Collect results
@@ -911,11 +1203,15 @@ def enhanced_scan(input_url: str) -> Dict:
         dns_result = futures["dns_security"].result()
         ct_result = futures["ct_logs"].result()
         breach_result = futures["breach_exposure"].result()
+        dkim_result = futures["dkim_records"].result()
+        mta_sts_result = futures["mta_sts"].result()
+        https_redirect_result = futures["https_redirect"].result()
 
     # Analyze response-dependent checks
     headers_result = analyze_security_headers(response)
     cookie_result = analyze_cookies(response)
     tech_result = fingerprint_technologies(response, domain)
+    mixed_content_result = check_mixed_content(response, domain)
 
     # Store all component results
     results["tls_certificate"] = tls_result
@@ -925,6 +1221,10 @@ def enhanced_scan(input_url: str) -> Dict:
     results["ct_logs"] = ct_result
     results["breach_exposure"] = breach_result
     results["tech_fingerprint"] = tech_result
+    results["dkim_records"] = dkim_result
+    results["mta_sts"] = mta_sts_result
+    results["https_redirect"] = https_redirect_result
+    results["mixed_content"] = mixed_content_result
 
     # Calculate subscores
     subscores = {
@@ -943,6 +1243,10 @@ def enhanced_scan(input_url: str) -> Dict:
         "ct_logs": int(ct_result["score"]),
         "breach_exposure": int(breach_result["score"]),
         "tech_fingerprint": int(tech_result["score"]),
+        "dkim_records": int(dkim_result["score"]),
+        "mta_sts": int(mta_sts_result["score"]),
+        "https_redirect": int(https_redirect_result["score"]),
+        "mixed_content": int(mixed_content_result["score"]),
     }
 
     results["subscores"] = subscores
@@ -989,6 +1293,10 @@ def enhanced_scan(input_url: str) -> Dict:
         "breach_exposure",
         "tech_fingerprint",
         "ct_logs",
+        "dkim_records",
+        "mta_sts",
+        "https_redirect",
+        "mixed_content",
     ]:
         component = results.get(component_key, {})
         issues = component.get("issues", [])
@@ -1072,6 +1380,44 @@ def print_report(results: Dict):
     print(f"  • DNSSEC: {dns['dnssec']['enabled']}")
     print(f"  • CAA Records: {dns['caa']['present']}")
 
+    # DKIM
+    print("\n🔑 DKIM EMAIL AUTHENTICATION")
+    dkim = results["dkim_records"]
+    print(f"  Score: {int(dkim['score'])}/100")
+    print(f"  • Selectors Found: {len(dkim['selectors_found'])}")
+    print(f"  • Selectors Tested: {len(dkim['selectors_tested'])}")
+    if dkim["selectors_found"]:
+        print(
+            f"  • Active Selectors: {[s['selector'] for s in dkim['selectors_found']]}"
+        )
+
+    # MTA-STS
+    print("\n📬 MTA-STS (Email Security)")
+    mta = results["mta_sts"]
+    print(f"  Score: {int(mta['score'])}/100")
+    print(f"  • DNS Record: {bool(mta['dns_record'])}")
+    print(f"  • Policy File: {bool(mta['policy_file'])}")
+    if mta["policy_mode"]:
+        print(f"  • Policy Mode: {mta['policy_mode']}")
+
+    # HTTPS Redirect
+    print("\n🔒 HTTPS ENFORCEMENT")
+    https_redir = results["https_redirect"]
+    print(f"  Score: {int(https_redir['score'])}/100")
+    print(f"  • HTTP Accessible: {https_redir['http_accessible']}")
+    print(f"  • Redirects to HTTPS: {https_redir['redirects_to_https']}")
+    if https_redir["redirect_chain"]:
+        print(f"  • Redirect Hops: {len(https_redir['redirect_chain'])}")
+
+    # Mixed Content
+    print("\n🔀 MIXED CONTENT CHECK")
+    mixed = results["mixed_content"]
+    print(f"  Score: {int(mixed['score'])}/100")
+    print(f"  • Page is HTTPS: {mixed['is_https']}")
+    if mixed["resource_types"]:
+        print(f"  • HTTP Resources Found: {sum(mixed['resource_types'].values())}")
+        print(f"  • Types: {mixed['resource_types']}")
+
     # Breach Exposure
     print("\n🚨 BREACH EXPOSURE")
     breach = results["breach_exposure"]
@@ -1145,8 +1491,7 @@ def print_report(results: Dict):
         """
 This assessment uses passive reconnaissance techniques only and does not
 perform any intrusive testing or exploitation. Results should be used as
-part of a comprehensive security program. For detailed security audits,
-consider engaging professional penetration testing services.
+part of a comprehensive security program.
 
 This tool is legally compliant and performs only authorized, non-invasive
 checks using publicly available information.
