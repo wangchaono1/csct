@@ -81,8 +81,7 @@ st.markdown(
 st.info(
     """
     ℹ️ **About this tool:** This assessment performs comprehensive, legally-compliant passive reconnaissance 
-    including TLS analysis, security headers, DNS security (SPF/DMARC/DKIM/DNSSEC/CAA), MTA-STS, HTTPS enforcement, 
-    mixed content detection, Certificate Transparency monitoring, breach exposure checking, and technology fingerprinting.
+    including 15 security tests.
     """
 )
 
@@ -993,9 +992,7 @@ elif validate_button:
                 owasp_cov = validation_report["framework_alignment"]["owasp"][
                     "coverage_percentage"
                 ]
-                avg_framework_cov = (
-                    (nist_cov * 0.40) + (cis_cov * 0.20) + (owasp_cov * 0.40)
-                )
+                avg_framework_cov = (nist_cov + cis_cov + owasp_cov) / 3
 
                 # Determine assessment based on coverage
                 if avg_framework_cov >= 75:
