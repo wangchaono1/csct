@@ -138,672 +138,752 @@ friendly_labels = {
 # SCAN EXECUTION LOGIC
 # ============================================================================
 if start_button:
+    # if not url_input.strip():
+    #     st.warning("⚠️ Please enter a valid domain or URL.")
+    # else:
+    #     progress_text = st.empty()
+    #     progress_bar = st.progress(0)
+
     if not url_input.strip():
         st.warning("⚠️ Please enter a valid domain or URL.")
     else:
-        progress_text = st.empty()
-        progress_bar = st.progress(0)
+        # Extract and clean domain name
+        domain = (
+            url_input.strip()
+            .replace("http://", "")
+            .replace("https://", "")
+            .split("/")[0]
+        )
 
-        progress_steps = [
-            "🔍 Initializing enhanced scan...",
-            "🔐 Analyzing TLS/SSL certificates...",
-            "📋 Inspecting security headers (HSTS, CSP, etc.)...",
-            "🍪 Checking cookie security attributes...",
-            "🌐 Verifying DNS security (SPF, DMARC, DNSSEC, CAA)...",
-            "🔑 Checking DKIM email authentication...",
-            "📬 Verifying MTA-STS (email security)...",
-            "🔒 Testing HTTPS redirect enforcement...",
-            "🔀 Detecting mixed content vulnerabilities...",
-            "📜 Checking Certificate Transparency logs...",
-            "🔎 Scanning breach databases...",
-            "⚙️ Fingerprinting technologies...",
-            "📊 Aggregating results and calculating scores...",
-        ]
-
+        # Step 0: Domain/Server existence check
         try:
-            for i, step in enumerate(progress_steps[:-1]):
-                progress_text.text(step)
-                progress_bar.progress(int((i + 1) / len(progress_steps) * 100))
-                time.sleep(0.4)
+            import socket
+            import requests
 
-            progress_text.text(progress_steps[-1])
-            result = enhanced_scan(url_input.strip())
+            # 1️⃣ DNS Resolution Check
+            socket.gethostbyname(domain)
 
-            progress_bar.progress(100)
-            progress_text.text("✅ Assessment completed successfully!")
-            time.sleep(0.5)
-            progress_text.empty()
-            progress_bar.empty()
+            # 2️⃣ HTTP/HTTPS Reachability Check (5-second timeout)
+            try:
+                response = requests.head(f"https://{domain}", timeout=5)
+            except Exception:
+                response = requests.head(f"http://{domain}", timeout=5)
 
-            st.success("🎉 Security assessment completed!")
+            # If checks passed, proceed with enhanced scan
+            progress_text = st.empty()
+            progress_bar = st.progress(0)
 
-            # Score and Risk Level Display
-            score = result["total_score"]
-            risk = result["risk_level"]
+            progress_steps = [
+                "🔍 Initializing enhanced scan...",
+                "🔐 Analyzing TLS/SSL certificates...",
+                "📋 Inspecting security headers (HSTS, CSP, etc.)...",
+                "🍪 Checking cookie security attributes...",
+                "🌐 Verifying DNS security (SPF, DMARC, DNSSEC, CAA)...",
+                "🔑 Checking DKIM email authentication...",
+                "📬 Verifying MTA-STS (email security)...",
+                "🔒 Testing HTTPS redirect enforcement...",
+                "🔀 Detecting mixed content vulnerabilities...",
+                "📜 Checking Certificate Transparency logs...",
+                "🔎 Scanning breach databases...",
+                "⚙️ Fingerprinting technologies...",
+                "📊 Aggregating results and calculating scores...",
+            ]
 
-            if score >= 80:
-                score_color = "#388E3C"
-                score_emoji = "🟢"
-            elif score >= 60:
-                score_color = "#F9A825"
-                score_emoji = "🟡"
-            elif score >= 40:
-                score_color = "#FF6F00"
-                score_emoji = "🟠"
-            else:
-                score_color = "#D32F2F"
-                score_emoji = "🔴"
+            try:
+                for i, step in enumerate(progress_steps[:-1]):
+                    progress_text.text(step)
+                    progress_bar.progress(int((i + 1) / len(progress_steps) * 100))
+                    time.sleep(0.4)
 
-            risk_colors = {
-                "Low": "#388E3C",
-                "Medium": "#F9A825",
-                "High": "#FF6F00",
-                "Critical": "#D32F2F",
-            }
-            risk_color = risk_colors.get(risk, "#6E6E6E")
+                progress_text.text(progress_steps[-1])
+                result = enhanced_scan(url_input.strip())
 
-            st.markdown(
-                f"""
-                <div style='text-align:center; margin: 2rem 0;'>
-                    <p style='font-size:48px; font-weight:700; margin-bottom:10px;'>
-                        {score_emoji} <span style='color:{score_color};'>{score}</span>
-                        <span style='color:#666; font-size:32px;'>/100</span>
-                    </p>
-                    <p style='font-size:28px; font-weight:600; margin-top:5px;'>
-                        <span style='color:#333;'>Risk Level: </span>
-                        <span style='color:{risk_color};'>{risk}</span>
-                    </p>
-                    <p style='font-size:14px; color:#666; margin-top:10px;'>
-                        Assessment Date: {datetime.now().strftime('%Y-%m-%d %H:%M:%S UTC')}
-                    </p>
-                </div>
-                """,
-                unsafe_allow_html=True,
-            )
+                progress_bar.progress(100)
+                progress_text.text("✅ Assessment completed successfully!")
+                time.sleep(0.5)
+                progress_text.empty()
+                progress_bar.empty()
 
-            st.markdown("---")
+                st.success("🎉 Security assessment completed!")
 
-            # Key Findings Section (4 columns)
-            st.markdown("### 🎯 Key Findings")
+                # Score and Risk Level Display
+                score = result["total_score"]
+                risk = result["risk_level"]
 
-            col1, col2, col3, col4 = st.columns(4)
+                if score >= 80:
+                    score_color = "#388E3C"
+                    score_emoji = "🟢"
+                elif score >= 60:
+                    score_color = "#F9A825"
+                    score_emoji = "🟡"
+                elif score >= 40:
+                    score_color = "#FF6F00"
+                    score_emoji = "🟠"
+                else:
+                    score_color = "#D32F2F"
+                    score_emoji = "🔴"
 
-            with col1:
+                risk_colors = {
+                    "Low": "#388E3C",
+                    "Medium": "#F9A825",
+                    "High": "#FF6F00",
+                    "Critical": "#D32F2F",
+                }
+                risk_color = risk_colors.get(risk, "#6E6E6E")
+
                 st.markdown(
-                    "<div class='metric-card'><h4 style='color:#1565C0; margin-bottom:10px;'>🔐 Certificate & TLS</h4></div>",
-                    unsafe_allow_html=True,
-                )
-                tls_info = result.get("tls_certificate", {})
-                if tls_info.get("has_tls"):
-                    st.success("✅ TLS Enabled")
-                    if tls_info.get("cert_valid"):
-                        st.success("✅ Valid Certificate")
-                    else:
-                        st.error("❌ Invalid Certificate")
-                    st.info(f"TLS Version: {tls_info.get('tls_version', 'Unknown')}")
-                    days_left = tls_info.get("days_until_expiry")
-                    if days_left is not None:
-                        if days_left < 30:
-                            st.warning(f"⚠️ Expires in {days_left} days")
-                        else:
-                            st.info(f"Valid for {days_left} days")
-                else:
-                    st.error("❌ TLS Not Detected")
-
-            with col2:
-                st.markdown(
-                    "<div class='metric-card'><h4 style='color:#1565C0; margin-bottom:10px;'>🛡️ Security Headers</h4></div>",
-                    unsafe_allow_html=True,
-                )
-                headers_info = result.get("security_headers", {})
-                headers_found = headers_info.get("headers_found", {})
-                headers_missing = headers_info.get("headers_missing", [])
-                st.info(f"✅ {len(headers_found)} headers present")
-                st.warning(f"⚠️ {len(headers_missing)} headers missing")
-                if (
-                    headers_info.get("header_quality", {})
-                    .get("HSTS", {})
-                    .get("present")
-                ):
-                    st.success("✅ HSTS Enabled")
-                else:
-                    st.error("❌ HSTS Missing")
-                if headers_info.get("header_quality", {}).get("CSP", {}).get("present"):
-                    st.success("✅ CSP Enabled")
-                else:
-                    st.error("❌ CSP Missing")
-
-            with col3:
-                st.markdown(
-                    "<div class='metric-card'><h4 style='color:#1565C0; margin-bottom:10px;'>📧 DNS & Email Security</h4></div>",
-                    unsafe_allow_html=True,
-                )
-                dns_info = result.get("dns_security", {})
-                if dns_info.get("spf", {}).get("present"):
-                    st.success("✅ SPF Record")
-                else:
-                    st.error("❌ SPF Missing")
-                if dns_info.get("dmarc", {}).get("present"):
-                    st.success("✅ DMARC Record")
-                else:
-                    st.error("❌ DMARC Missing")
-
-                dkim_info = result.get("dkim_records", {})
-                if len(dkim_info.get("selectors_found", [])) > 0:
-                    st.success(
-                        f"✅ DKIM ({len(dkim_info['selectors_found'])} selectors)"
-                    )
-                else:
-                    st.warning("⚠️ DKIM Not Found")
-
-                mta_info = result.get("mta_sts", {})
-                if mta_info.get("dns_record") and mta_info.get("policy_file"):
-                    st.success("✅ MTA-STS Configured")
-                else:
-                    st.warning("⚠️ MTA-STS Missing")
-
-            with col4:
-                st.markdown(
-                    "<div class='metric-card'><h4 style='color:#1565C0; margin-bottom:10px;'>🔒 HTTPS & Content</h4></div>",
+                    f"""
+                    <div style='text-align:center; margin: 2rem 0;'>
+                        <p style='font-size:48px; font-weight:700; margin-bottom:10px;'>
+                            {score_emoji} <span style='color:{score_color};'>{score}</span>
+                            <span style='color:#666; font-size:32px;'>/100</span>
+                        </p>
+                        <p style='font-size:28px; font-weight:600; margin-top:5px;'>
+                            <span style='color:#333;'>Risk Level: </span>
+                            <span style='color:{risk_color};'>{risk}</span>
+                        </p>
+                        <p style='font-size:14px; color:#666; margin-top:10px;'>
+                            Assessment Date: {datetime.now().strftime('%Y-%m-%d %H:%M:%S UTC')}
+                        </p>
+                    </div>
+                    """,
                     unsafe_allow_html=True,
                 )
 
-                https_redirect = result.get("https_redirect", {})
-                if https_redirect.get("redirects_to_https"):
-                    st.success("✅ HTTPS Enforced")
-                else:
-                    st.error("❌ HTTP Not Redirected")
+                st.markdown("---")
 
-                mixed_content = result.get("mixed_content", {})
-                http_resources = len(mixed_content.get("http_resources", []))
-                if mixed_content.get("is_https"):
-                    if http_resources == 0:
-                        st.success("✅ No Mixed Content")
-                    else:
-                        st.error(f"❌ {http_resources} HTTP Resources")
-                else:
-                    st.info("ℹ️ Not HTTPS Page")
+                # Key Findings Section (4 columns)
+                st.markdown("### 🎯 Key Findings")
 
-                if dns_info.get("dnssec", {}).get("enabled"):
-                    st.success("✅ DNSSEC Enabled")
-                else:
-                    st.warning("⚠️ DNSSEC Not Detected")
+                col1, col2, col3, col4 = st.columns(4)
 
-                if dns_info.get("caa", {}).get("present"):
-                    st.success("✅ CAA Records")
-                else:
-                    st.info("ℹ️ No CAA Records")
-
-            st.markdown("---")
-
-            # Radar Chart
-            st.markdown("### 📊 Security Posture Visualization")
-
-            col1, col2 = st.columns([2, 1])
-
-            with col1:
-                subscores = result.get("subscores", {})
-
-                categories = [friendly_labels.get(k, k) for k in subscores.keys()]
-                values = list(subscores.values())
-                N = len(categories)
-
-                values += values[:1]
-                angles = np.linspace(0, 2 * np.pi, N, endpoint=False).tolist()
-                angles += angles[:1]
-
-                fig, ax = plt.subplots(figsize=(10, 10), subplot_kw=dict(polar=True))
-                ax.plot(angles, values, linewidth=2.5, color="#1565C0", alpha=0.9)
-                ax.fill(angles, values, color="#64B5F6", alpha=0.3)
-                ax.set_xticks(angles[:-1])
-                ax.set_xticklabels(
-                    categories, fontsize=8, fontweight="600", color="#333"
-                )
-                ax.tick_params(axis="x", pad=15)
-                ax.set_yticks([20, 40, 60, 80, 100])
-                ax.set_yticklabels(
-                    ["20", "40", "60", "80", "100"], fontsize=8, color="#555"
-                )
-                ax.set_ylim(0, 100)
-                ax.spines["polar"].set_visible(False)
-                ax.grid(True, linestyle="--", linewidth=0.6, alpha=0.7)
-                st.pyplot(fig)
-
-            with col2:
-                st.markdown("#### 📈 Score Breakdown")
-                for key, value in subscores.items():
-                    label = friendly_labels.get(key, key)
-                    if value >= 80:
-                        color = "#388E3C"
-                        icon = "🟢"
-                    elif value >= 60:
-                        color = "#F9A825"
-                        icon = "🟡"
-                    elif value >= 40:
-                        color = "#FF6F00"
-                        icon = "🟠"
-                    else:
-                        color = "#D32F2F"
-                        icon = "🔴"
+                with col1:
                     st.markdown(
-                        f"{icon} **{label}**: <span style='color:{color}; font-weight:700;'>{value}</span>",
+                        "<div class='metric-card'><h4 style='color:#1565C0; margin-bottom:10px;'>🔐 Certificate & TLS</h4></div>",
+                        unsafe_allow_html=True,
+                    )
+                    tls_info = result.get("tls_certificate", {})
+                    if tls_info.get("has_tls"):
+                        st.success("✅ TLS Enabled")
+                        if tls_info.get("cert_valid"):
+                            st.success("✅ Valid Certificate")
+                        else:
+                            st.error("❌ Invalid Certificate")
+                        st.info(
+                            f"TLS Version: {tls_info.get('tls_version', 'Unknown')}"
+                        )
+                        days_left = tls_info.get("days_until_expiry")
+                        if days_left is not None:
+                            if days_left < 30:
+                                st.warning(f"⚠️ Expires in {days_left} days")
+                            else:
+                                st.info(f"Valid for {days_left} days")
+                    else:
+                        st.error("❌ TLS Not Detected")
+
+                with col2:
+                    st.markdown(
+                        "<div class='metric-card'><h4 style='color:#1565C0; margin-bottom:10px;'>🛡️ Security Headers</h4></div>",
+                        unsafe_allow_html=True,
+                    )
+                    headers_info = result.get("security_headers", {})
+                    headers_found = headers_info.get("headers_found", {})
+                    headers_missing = headers_info.get("headers_missing", [])
+                    st.info(f"✅ {len(headers_found)} headers present")
+                    st.warning(f"⚠️ {len(headers_missing)} headers missing")
+                    if (
+                        headers_info.get("header_quality", {})
+                        .get("HSTS", {})
+                        .get("present")
+                    ):
+                        st.success("✅ HSTS Enabled")
+                    else:
+                        st.error("❌ HSTS Missing")
+                    if (
+                        headers_info.get("header_quality", {})
+                        .get("CSP", {})
+                        .get("present")
+                    ):
+                        st.success("✅ CSP Enabled")
+                    else:
+                        st.error("❌ CSP Missing")
+
+                with col3:
+                    st.markdown(
+                        "<div class='metric-card'><h4 style='color:#1565C0; margin-bottom:10px;'>📧 DNS & Email Security</h4></div>",
+                        unsafe_allow_html=True,
+                    )
+                    dns_info = result.get("dns_security", {})
+                    if dns_info.get("spf", {}).get("present"):
+                        st.success("✅ SPF Record")
+                    else:
+                        st.error("❌ SPF Missing")
+                    if dns_info.get("dmarc", {}).get("present"):
+                        st.success("✅ DMARC Record")
+                    else:
+                        st.error("❌ DMARC Missing")
+
+                    dkim_info = result.get("dkim_records", {})
+                    if len(dkim_info.get("selectors_found", [])) > 0:
+                        st.success(
+                            f"✅ DKIM ({len(dkim_info['selectors_found'])} selectors)"
+                        )
+                    else:
+                        st.warning("⚠️ DKIM Not Found")
+
+                    mta_info = result.get("mta_sts", {})
+                    if mta_info.get("dns_record") and mta_info.get("policy_file"):
+                        st.success("✅ MTA-STS Configured")
+                    else:
+                        st.warning("⚠️ MTA-STS Missing")
+
+                with col4:
+                    st.markdown(
+                        "<div class='metric-card'><h4 style='color:#1565C0; margin-bottom:10px;'>🔒 HTTPS & Content</h4></div>",
                         unsafe_allow_html=True,
                     )
 
-            st.markdown("---")
-
-            # Detailed Findings (5 tabs)
-            with st.expander("🔍 Detailed Technical Findings", expanded=False):
-                tab1, tab2, tab3, tab4, tab5 = st.tabs(
-                    [
-                        "🔐 TLS & Certificates",
-                        "🛡️ Headers & Cookies",
-                        "📧 Email Security",
-                        "🔒 HTTPS & Content",
-                        "🚨 Threats & Exposures",
-                    ]
-                )
-
-                with tab1:
-                    st.markdown("#### TLS/SSL Certificate Analysis")
-                    tls_info = result.get("tls_certificate", {})
-                    col1, col2 = st.columns(2)
-                    with col1:
-                        st.json(
-                            {
-                                "TLS Present": tls_info.get("has_tls"),
-                                "Certificate Valid": tls_info.get("cert_valid"),
-                                "TLS Version": tls_info.get("tls_version"),
-                                "Cipher Suite": tls_info.get("cipher_suite"),
-                                "Days Until Expiry": tls_info.get("days_until_expiry"),
-                                "SAN Count": tls_info.get("san_count", 0),
-                            }
-                        )
-                    with col2:
-                        st.markdown("**Issues Detected:**")
-                        issues = tls_info.get("issues", [])
-                        if issues:
-                            for issue in issues:
-                                if "CRITICAL" in issue:
-                                    st.error(issue)
-                                elif "WARNING" in issue:
-                                    st.warning(issue)
-                                else:
-                                    st.info(issue)
-                        else:
-                            st.success("✅ No major issues detected")
-
-                with tab2:
-                    st.markdown("#### Security Headers")
-                    headers_info = result.get("security_headers", {})
-                    col1, col2 = st.columns(2)
-                    with col1:
-                        st.markdown("**Present Headers:**")
-                        for header, value in headers_info.get(
-                            "headers_found", {}
-                        ).items():
-                            with st.expander(f"✅ {header}"):
-                                st.code(value)
-                    with col2:
-                        st.markdown("**Missing Headers:**")
-                        for header in headers_info.get("headers_missing", []):
-                            st.warning(f"❌ {header}")
-
-                    st.markdown("#### Cookie Security")
-                    cookie_info = result.get("cookie_security", {})
-                    st.json(
-                        {
-                            "Total Cookies": len(cookie_info.get("cookies", [])),
-                            "Secure Cookies": cookie_info.get("secure_count", 0),
-                            "HttpOnly Cookies": cookie_info.get("httponly_count", 0),
-                            "SameSite Cookies": cookie_info.get("samesite_count", 0),
-                        }
-                    )
-
-                with tab3:
-                    st.markdown("#### DNS & Email Security Configuration")
-                    dns_info = result.get("dns_security", {})
-                    col1, col2 = st.columns(2)
-
-                    with col1:
-                        st.markdown("**SPF & DMARC:**")
-                        spf_info = dns_info.get("spf", {})
-                        if spf_info.get("present"):
-                            st.success("✅ SPF Record")
-                            if spf_info.get("record"):
-                                st.code(spf_info.get("record")[:200])
-                            st.caption(f"Policy: {spf_info.get('policy', 'N/A')}")
-                        else:
-                            st.error("❌ No SPF Record")
-
-                        dmarc_info = dns_info.get("dmarc", {})
-                        if dmarc_info.get("present"):
-                            st.success("✅ DMARC Record")
-                            if dmarc_info.get("record"):
-                                st.code(dmarc_info.get("record")[:200])
-                            st.caption(f"Policy: {dmarc_info.get('policy', 'N/A')}")
-                        else:
-                            st.error("❌ No DMARC Record")
-
-                        st.markdown("---")
-                        st.markdown("**DNSSEC & CAA:**")
-                        if dns_info.get("dnssec", {}).get("enabled"):
-                            st.success("✅ DNSSEC Enabled")
-                        else:
-                            st.warning("⚠️ DNSSEC Not Enabled")
-
-                        caa_info = dns_info.get("caa", {})
-                        if caa_info.get("present"):
-                            st.success("✅ CAA Records")
-                            for record in caa_info.get("records", [])[:3]:
-                                st.code(record)
-                        else:
-                            st.info("ℹ️ No CAA Records")
-
-                    with col2:
-                        st.markdown("**DKIM Authentication:**")
-                        dkim_info = result.get("dkim_records", {})
-                        selectors_found = dkim_info.get("selectors_found", [])
-
-                        if selectors_found:
-                            st.success(
-                                f"✅ {len(selectors_found)} DKIM Selector(s) Found"
-                            )
-                            for selector_data in selectors_found:
-                                with st.expander(
-                                    f"Selector: {selector_data['selector']}"
-                                ):
-                                    st.code(selector_data["record"])
-                        else:
-                            st.warning("⚠️ No DKIM Records Found")
-                            st.caption(
-                                f"Tested {len(dkim_info.get('selectors_tested', []))} common selectors"
-                            )
-
-                        if dkim_info.get("issues"):
-                            for issue in dkim_info["issues"]:
-                                if "WARNING" in issue:
-                                    st.warning(issue)
-                                else:
-                                    st.info(issue)
-
-                        st.markdown("---")
-                        st.markdown("**MTA-STS (SMTP Security):**")
-                        mta_info = result.get("mta_sts", {})
-
-                        if mta_info.get("dns_record"):
-                            st.success("✅ MTA-STS DNS Record")
-                            st.code(mta_info["dns_record"])
-                        else:
-                            st.warning("⚠️ No MTA-STS DNS Record")
-
-                        if mta_info.get("policy_file"):
-                            st.success("✅ MTA-STS Policy File")
-                            mode = mta_info.get("policy_mode", "unknown")
-                            st.caption(f"Mode: {mode}")
-                            with st.expander("View Policy"):
-                                st.code(mta_info["policy_file"])
-                        elif mta_info.get("dns_record"):
-                            st.error("❌ Policy File Not Accessible")
-
-                        if mta_info.get("issues"):
-                            for issue in mta_info["issues"]:
-                                if "WARNING" in issue:
-                                    st.warning(issue)
-                                else:
-                                    st.info(issue)
-
-                with tab4:
-                    st.markdown("#### HTTPS Enforcement & Content Security")
-                    col1, col2 = st.columns(2)
-
-                    with col1:
-                        st.markdown("**HTTPS Redirect Check:**")
-                        https_redirect = result.get("https_redirect", {})
-
-                        if https_redirect.get("http_accessible"):
-                            if https_redirect.get("redirects_to_https"):
-                                st.success("✅ HTTP Redirects to HTTPS")
-                                if https_redirect.get("redirect_chain"):
-                                    st.caption(
-                                        f"{len(https_redirect['redirect_chain'])} redirect(s)"
-                                    )
-                                    with st.expander("View Redirect Chain"):
-                                        for i, redirect in enumerate(
-                                            https_redirect["redirect_chain"], 1
-                                        ):
-                                            st.write(
-                                                f"**Hop {i}:** {redirect.get('code', 'N/A')}"
-                                            )
-                                            st.write(
-                                                f"From: `{redirect.get('from', 'N/A')}`"
-                                            )
-                                            st.write(
-                                                f"To: `{redirect.get('to', 'N/A')}`"
-                                            )
-                                            st.write("---")
-                            else:
-                                st.error("❌ HTTP Does Not Redirect to HTTPS")
-                        else:
-                            st.success("✅ HTTP Not Accessible (HTTPS-only)")
-
-                        if https_redirect.get("issues"):
-                            for issue in https_redirect["issues"]:
-                                if "CRITICAL" in issue:
-                                    st.error(issue)
-                                elif "WARNING" in issue:
-                                    st.warning(issue)
-                                else:
-                                    st.info(issue)
-
-                    with col2:
-                        st.markdown("**Mixed Content Detection:**")
-                        mixed_content = result.get("mixed_content", {})
-
-                        if mixed_content.get("is_https"):
-                            http_resources = mixed_content.get("http_resources", [])
-                            resource_types = mixed_content.get("resource_types", {})
-
-                            if len(http_resources) == 0:
-                                st.success("✅ No Mixed Content Detected")
-                            else:
-                                st.error(
-                                    f"❌ {len(http_resources)} HTTP Resources Found"
-                                )
-
-                                if resource_types:
-                                    st.markdown("**Resource Types:**")
-                                    for res_type, count in resource_types.items():
-                                        st.warning(f"• {res_type}: {count}")
-
-                                with st.expander("View HTTP Resources"):
-                                    for resource in http_resources[:10]:
-                                        st.code(resource)
-                                    if len(http_resources) > 10:
-                                        st.caption(
-                                            f"...and {len(http_resources) - 10} more"
-                                        )
-                        else:
-                            st.info("ℹ️ Page Not HTTPS - Check Not Applicable")
-
-                        if mixed_content.get("issues"):
-                            for issue in mixed_content["issues"]:
-                                if "CRITICAL" in issue:
-                                    st.error(issue)
-                                elif "WARNING" in issue:
-                                    st.warning(issue)
-                                else:
-                                    st.info(issue)
-
-                with tab5:
-                    st.markdown("#### Breach Exposure")
-                    breach_info = result.get("breach_exposure", {})
-                    breach_count = breach_info.get("breach_count", 0)
-
-                    if breach_count > 0:
-                        st.error(
-                            f"🚨 Domain found in {breach_count} known data breaches"
-                        )
-                        for breach in breach_info.get("breaches", []):
-                            with st.expander(
-                                f"⚠️ {breach.get('name')} - {breach.get('date')}"
-                            ):
-                                st.write(
-                                    f"**Compromised accounts:** {breach.get('pwn_count', 'Unknown'):,}"
-                                )
-                                st.write(
-                                    f"**Data exposed:** {', '.join(breach.get('data_classes', []))}"
-                                )
+                    https_redirect = result.get("https_redirect", {})
+                    if https_redirect.get("redirects_to_https"):
+                        st.success("✅ HTTPS Enforced")
                     else:
-                        st.success("✅ No known data breaches found")
+                        st.error("❌ HTTP Not Redirected")
 
-                    st.markdown("#### Technology Fingerprinting")
-                    tech_info = result.get("tech_fingerprint", {})
-                    col1, col2 = st.columns(2)
-                    with col1:
-                        st.markdown("**Detected Technologies:**")
-                        techs = tech_info.get("technologies", {})
-                        if techs:
-                            for tech, value in techs.items():
-                                st.info(f"• {tech}: {value}")
+                    mixed_content = result.get("mixed_content", {})
+                    http_resources = len(mixed_content.get("http_resources", []))
+                    if mixed_content.get("is_https"):
+                        if http_resources == 0:
+                            st.success("✅ No Mixed Content")
                         else:
-                            st.info("No technologies detected")
-                    with col2:
-                        st.markdown("**Vulnerable Technologies:**")
-                        vuln_techs = tech_info.get("vulnerable_techs", [])
-                        if vuln_techs:
-                            for tech in vuln_techs:
-                                st.warning(f"⚠️ {tech}")
-                        else:
-                            st.success("✅ No known vulnerable technologies detected")
+                            st.error(f"❌ {http_resources} HTTP Resources")
+                    else:
+                        st.info("ℹ️ Not HTTPS Page")
 
-                    st.markdown("#### Certificate Transparency")
-                    ct_info = result.get("ct_logs", {})
-                    st.json(
-                        {
-                            "Certificates Found": ct_info.get("certificates_found", 0),
-                            "Recent Certificates (90d)": ct_info.get("recent_count", 0),
-                            "Certificate Issuers": (
-                                ct_info.get("issuers", [])[:5]
-                                if ct_info.get("issuers")
-                                else []
-                            ),
-                        }
+                    if dns_info.get("dnssec", {}).get("enabled"):
+                        st.success("✅ DNSSEC Enabled")
+                    else:
+                        st.warning("⚠️ DNSSEC Not Detected")
+
+                    if dns_info.get("caa", {}).get("present"):
+                        st.success("✅ CAA Records")
+                    else:
+                        st.info("ℹ️ No CAA Records")
+
+                st.markdown("---")
+
+                # Radar Chart
+                st.markdown("### 📊 Security Posture Visualization")
+
+                col1, col2 = st.columns([2, 1])
+
+                with col1:
+                    subscores = result.get("subscores", {})
+
+                    categories = [friendly_labels.get(k, k) for k in subscores.keys()]
+                    values = list(subscores.values())
+                    N = len(categories)
+
+                    values += values[:1]
+                    angles = np.linspace(0, 2 * np.pi, N, endpoint=False).tolist()
+                    angles += angles[:1]
+
+                    fig, ax = plt.subplots(
+                        figsize=(10, 10), subplot_kw=dict(polar=True)
                     )
+                    ax.plot(angles, values, linewidth=2.5, color="#1565C0", alpha=0.9)
+                    ax.fill(angles, values, color="#64B5F6", alpha=0.3)
+                    ax.set_xticks(angles[:-1])
+                    ax.set_xticklabels(
+                        categories, fontsize=8, fontweight="600", color="#333"
+                    )
+                    ax.tick_params(axis="x", pad=15)
+                    ax.set_yticks([20, 40, 60, 80, 100])
+                    ax.set_yticklabels(
+                        ["20", "40", "60", "80", "100"], fontsize=8, color="#555"
+                    )
+                    ax.set_ylim(0, 100)
+                    ax.spines["polar"].set_visible(False)
+                    ax.grid(True, linestyle="--", linewidth=0.6, alpha=0.7)
+                    st.pyplot(fig)
 
-            # Recommendations
-            with st.expander("💡 Security Recommendations", expanded=True):
-                st.markdown("### 🛠️ Recommended Actions")
-
-                all_issues = []
-                for component in [
-                    "tls_certificate",
-                    "security_headers",
-                    "dns_security",
-                    "cookie_security",
-                    "breach_exposure",
-                    "tech_fingerprint",
-                    "ct_logs",
-                    "dkim_records",
-                    "mta_sts",
-                    "https_redirect",
-                    "mixed_content",
-                ]:
-                    issues = result.get(component, {}).get("issues", [])
-                    all_issues.extend(issues)
-
-                if all_issues:
-                    critical = [i for i in all_issues if "CRITICAL" in i]
-                    warnings = [i for i in all_issues if "WARNING" in i]
-                    info = [i for i in all_issues if "INFO" in i]
-
-                    if critical:
+                with col2:
+                    st.markdown("#### 📈 Score Breakdown")
+                    for key, value in subscores.items():
+                        label = friendly_labels.get(key, key)
+                        if value >= 80:
+                            color = "#388E3C"
+                            icon = "🟢"
+                        elif value >= 60:
+                            color = "#F9A825"
+                            icon = "🟡"
+                        elif value >= 40:
+                            color = "#FF6F00"
+                            icon = "🟠"
+                        else:
+                            color = "#D32F2F"
+                            icon = "🔴"
                         st.markdown(
-                            "#### 🔴 Critical Issues (Immediate Action Required)"
+                            f"{icon} **{label}**: <span style='color:{color}; font-weight:700;'>{value}</span>",
+                            unsafe_allow_html=True,
                         )
-                        for issue in critical:
-                            st.error(issue)
 
-                    if warnings:
-                        st.markdown("#### 🟡 Warnings (Should Be Addressed)")
-                        for issue in warnings:
-                            st.warning(issue)
+                # st.markdown("---")
 
-                    if info:
-                        st.markdown("#### ℹ️ Informational")
-                        for issue in info[:10]:
-                            st.info(issue)
-                        if len(info) > 10:
-                            st.caption(
-                                f"...and {len(info) - 10} more informational items"
+                # Detailed Findings (5 tabs) (Disabled)
+                if False:
+                    with st.expander("🔍 Detailed Technical Findings", expanded=False):
+                        tab1, tab2, tab3, tab4, tab5 = st.tabs(
+                            [
+                                "🔐 TLS & Certificates",
+                                "🛡️ Headers & Cookies",
+                                "📧 Email Security",
+                                "🔒 HTTPS & Content",
+                                "🚨 Threats & Exposures",
+                            ]
+                        )
+
+                        with tab1:
+                            st.markdown("#### TLS/SSL Certificate Analysis")
+                            tls_info = result.get("tls_certificate", {})
+                            col1, col2 = st.columns(2)
+                            with col1:
+                                st.json(
+                                    {
+                                        "TLS Present": tls_info.get("has_tls"),
+                                        "Certificate Valid": tls_info.get("cert_valid"),
+                                        "TLS Version": tls_info.get("tls_version"),
+                                        "Cipher Suite": tls_info.get("cipher_suite"),
+                                        "Days Until Expiry": tls_info.get(
+                                            "days_until_expiry"
+                                        ),
+                                        "SAN Count": tls_info.get("san_count", 0),
+                                    }
+                                )
+                            with col2:
+                                st.markdown("**Issues Detected:**")
+                                issues = tls_info.get("issues", [])
+                                if issues:
+                                    for issue in issues:
+                                        if "CRITICAL" in issue:
+                                            st.error(issue)
+                                        elif "WARNING" in issue:
+                                            st.warning(issue)
+                                        else:
+                                            st.info(issue)
+                                else:
+                                    st.success("✅ No major issues detected")
+
+                        with tab2:
+                            st.markdown("#### Security Headers")
+                            headers_info = result.get("security_headers", {})
+                            col1, col2 = st.columns(2)
+                            with col1:
+                                st.markdown("**Present Headers:**")
+                                for header, value in headers_info.get(
+                                    "headers_found", {}
+                                ).items():
+                                    with st.expander(f"✅ {header}"):
+                                        st.code(value)
+                            with col2:
+                                st.markdown("**Missing Headers:**")
+                                for header in headers_info.get("headers_missing", []):
+                                    st.warning(f"❌ {header}")
+
+                            st.markdown("#### Cookie Security")
+                            cookie_info = result.get("cookie_security", {})
+                            st.json(
+                                {
+                                    "Total Cookies": len(
+                                        cookie_info.get("cookies", [])
+                                    ),
+                                    "Secure Cookies": cookie_info.get(
+                                        "secure_count", 0
+                                    ),
+                                    "HttpOnly Cookies": cookie_info.get(
+                                        "httponly_count", 0
+                                    ),
+                                    "SameSite Cookies": cookie_info.get(
+                                        "samesite_count", 0
+                                    ),
+                                }
                             )
-                else:
-                    st.success(
-                        "✅ No major issues detected! Your security posture looks good."
+
+                        with tab3:
+                            st.markdown("#### DNS & Email Security Configuration")
+                            dns_info = result.get("dns_security", {})
+                            col1, col2 = st.columns(2)
+
+                            with col1:
+                                st.markdown("**SPF & DMARC:**")
+                                spf_info = dns_info.get("spf", {})
+                                if spf_info.get("present"):
+                                    st.success("✅ SPF Record")
+                                    if spf_info.get("record"):
+                                        st.code(spf_info.get("record")[:200])
+                                    st.caption(
+                                        f"Policy: {spf_info.get('policy', 'N/A')}"
+                                    )
+                                else:
+                                    st.error("❌ No SPF Record")
+
+                                dmarc_info = dns_info.get("dmarc", {})
+                                if dmarc_info.get("present"):
+                                    st.success("✅ DMARC Record")
+                                    if dmarc_info.get("record"):
+                                        st.code(dmarc_info.get("record")[:200])
+                                    st.caption(
+                                        f"Policy: {dmarc_info.get('policy', 'N/A')}"
+                                    )
+                                else:
+                                    st.error("❌ No DMARC Record")
+
+                                st.markdown("---")
+                                st.markdown("**DNSSEC & CAA:**")
+                                if dns_info.get("dnssec", {}).get("enabled"):
+                                    st.success("✅ DNSSEC Enabled")
+                                else:
+                                    st.warning("⚠️ DNSSEC Not Enabled")
+
+                                caa_info = dns_info.get("caa", {})
+                                if caa_info.get("present"):
+                                    st.success("✅ CAA Records")
+                                    for record in caa_info.get("records", [])[:3]:
+                                        st.code(record)
+                                else:
+                                    st.info("ℹ️ No CAA Records")
+
+                            with col2:
+                                st.markdown("**DKIM Authentication:**")
+                                dkim_info = result.get("dkim_records", {})
+                                selectors_found = dkim_info.get("selectors_found", [])
+
+                                if selectors_found:
+                                    st.success(
+                                        f"✅ {len(selectors_found)} DKIM Selector(s) Found"
+                                    )
+                                    for selector_data in selectors_found:
+                                        with st.expander(
+                                            f"Selector: {selector_data['selector']}"
+                                        ):
+                                            st.code(selector_data["record"])
+                                else:
+                                    st.warning("⚠️ No DKIM Records Found")
+                                    st.caption(
+                                        f"Tested {len(dkim_info.get('selectors_tested', []))} common selectors"
+                                    )
+
+                                if dkim_info.get("issues"):
+                                    for issue in dkim_info["issues"]:
+                                        if "WARNING" in issue:
+                                            st.warning(issue)
+                                        else:
+                                            st.info(issue)
+
+                                st.markdown("---")
+                                st.markdown("**MTA-STS (SMTP Security):**")
+                                mta_info = result.get("mta_sts", {})
+
+                                if mta_info.get("dns_record"):
+                                    st.success("✅ MTA-STS DNS Record")
+                                    st.code(mta_info["dns_record"])
+                                else:
+                                    st.warning("⚠️ No MTA-STS DNS Record")
+
+                                if mta_info.get("policy_file"):
+                                    st.success("✅ MTA-STS Policy File")
+                                    mode = mta_info.get("policy_mode", "unknown")
+                                    st.caption(f"Mode: {mode}")
+                                    with st.expander("View Policy"):
+                                        st.code(mta_info["policy_file"])
+                                elif mta_info.get("dns_record"):
+                                    st.error("❌ Policy File Not Accessible")
+
+                                if mta_info.get("issues"):
+                                    for issue in mta_info["issues"]:
+                                        if "WARNING" in issue:
+                                            st.warning(issue)
+                                        else:
+                                            st.info(issue)
+
+                        with tab4:
+                            st.markdown("#### HTTPS Enforcement & Content Security")
+                            col1, col2 = st.columns(2)
+
+                            with col1:
+                                st.markdown("**HTTPS Redirect Check:**")
+                                https_redirect = result.get("https_redirect", {})
+
+                                if https_redirect.get("http_accessible"):
+                                    if https_redirect.get("redirects_to_https"):
+                                        st.success("✅ HTTP Redirects to HTTPS")
+                                        if https_redirect.get("redirect_chain"):
+                                            st.caption(
+                                                f"{len(https_redirect['redirect_chain'])} redirect(s)"
+                                            )
+                                            with st.expander("View Redirect Chain"):
+                                                for i, redirect in enumerate(
+                                                    https_redirect["redirect_chain"], 1
+                                                ):
+                                                    st.write(
+                                                        f"**Hop {i}:** {redirect.get('code', 'N/A')}"
+                                                    )
+                                                    st.write(
+                                                        f"From: `{redirect.get('from', 'N/A')}`"
+                                                    )
+                                                    st.write(
+                                                        f"To: `{redirect.get('to', 'N/A')}`"
+                                                    )
+                                                    st.write("---")
+                                    else:
+                                        st.error("❌ HTTP Does Not Redirect to HTTPS")
+                                else:
+                                    st.success("✅ HTTP Not Accessible (HTTPS-only)")
+
+                                if https_redirect.get("issues"):
+                                    for issue in https_redirect["issues"]:
+                                        if "CRITICAL" in issue:
+                                            st.error(issue)
+                                        elif "WARNING" in issue:
+                                            st.warning(issue)
+                                        else:
+                                            st.info(issue)
+
+                            with col2:
+                                st.markdown("**Mixed Content Detection:**")
+                                mixed_content = result.get("mixed_content", {})
+
+                                if mixed_content.get("is_https"):
+                                    http_resources = mixed_content.get(
+                                        "http_resources", []
+                                    )
+                                    resource_types = mixed_content.get(
+                                        "resource_types", {}
+                                    )
+
+                                    if len(http_resources) == 0:
+                                        st.success("✅ No Mixed Content Detected")
+                                    else:
+                                        st.error(
+                                            f"❌ {len(http_resources)} HTTP Resources Found"
+                                        )
+
+                                        if resource_types:
+                                            st.markdown("**Resource Types:**")
+                                            for (
+                                                res_type,
+                                                count,
+                                            ) in resource_types.items():
+                                                st.warning(f"• {res_type}: {count}")
+
+                                        with st.expander("View HTTP Resources"):
+                                            for resource in http_resources[:10]:
+                                                st.code(resource)
+                                            if len(http_resources) > 10:
+                                                st.caption(
+                                                    f"...and {len(http_resources) - 10} more"
+                                                )
+                                else:
+                                    st.info("ℹ️ Page Not HTTPS - Check Not Applicable")
+
+                                if mixed_content.get("issues"):
+                                    for issue in mixed_content["issues"]:
+                                        if "CRITICAL" in issue:
+                                            st.error(issue)
+                                        elif "WARNING" in issue:
+                                            st.warning(issue)
+                                        else:
+                                            st.info(issue)
+
+                        with tab5:
+                            st.markdown("#### Breach Exposure")
+                            breach_info = result.get("breach_exposure", {})
+                            breach_count = breach_info.get("breach_count", 0)
+
+                            if breach_count > 0:
+                                st.error(
+                                    f"🚨 Domain found in {breach_count} known data breaches"
+                                )
+                                for breach in breach_info.get("breaches", []):
+                                    with st.expander(
+                                        f"⚠️ {breach.get('name')} - {breach.get('date')}"
+                                    ):
+                                        st.write(
+                                            f"**Compromised accounts:** {breach.get('pwn_count', 'Unknown'):,}"
+                                        )
+                                        st.write(
+                                            f"**Data exposed:** {', '.join(breach.get('data_classes', []))}"
+                                        )
+                            else:
+                                st.success("✅ No known data breaches found")
+
+                            st.markdown("#### Technology Fingerprinting")
+                            tech_info = result.get("tech_fingerprint", {})
+                            col1, col2 = st.columns(2)
+                            with col1:
+                                st.markdown("**Detected Technologies:**")
+                                techs = tech_info.get("technologies", {})
+                                if techs:
+                                    for tech, value in techs.items():
+                                        st.info(f"• {tech}: {value}")
+                                else:
+                                    st.info("No technologies detected")
+                            with col2:
+                                st.markdown("**Vulnerable Technologies:**")
+                                vuln_techs = tech_info.get("vulnerable_techs", [])
+                                if vuln_techs:
+                                    for tech in vuln_techs:
+                                        st.warning(f"⚠️ {tech}")
+                                else:
+                                    st.success(
+                                        "✅ No known vulnerable technologies detected"
+                                    )
+
+                            st.markdown("#### Certificate Transparency")
+                            ct_info = result.get("ct_logs", {})
+                            st.json(
+                                {
+                                    "Certificates Found": ct_info.get(
+                                        "certificates_found", 0
+                                    ),
+                                    "Recent Certificates (90d)": ct_info.get(
+                                        "recent_count", 0
+                                    ),
+                                    "Certificate Issuers": (
+                                        ct_info.get("issuers", [])[:5]
+                                        if ct_info.get("issuers")
+                                        else []
+                                    ),
+                                }
+                            )
+
+                # Ensure variable exists even if recommendations are disabled
+                all_issues = []
+
+                # Recommendations (Disabled)
+                if False:
+                    with st.expander("💡 Security Recommendations", expanded=True):
+                        st.markdown("### 🛠️ Recommended Actions")
+
+                        all_issues = []
+                        for component in [
+                            "tls_certificate",
+                            "security_headers",
+                            "dns_security",
+                            "cookie_security",
+                            "breach_exposure",
+                            "tech_fingerprint",
+                            "ct_logs",
+                            "dkim_records",
+                            "mta_sts",
+                            "https_redirect",
+                            "mixed_content",
+                        ]:
+                            issues = result.get(component, {}).get("issues", [])
+                            all_issues.extend(issues)
+
+                        if all_issues:
+                            critical = [i for i in all_issues if "CRITICAL" in i]
+                            warnings = [i for i in all_issues if "WARNING" in i]
+                            info = [i for i in all_issues if "INFO" in i]
+
+                            if critical:
+                                st.markdown(
+                                    "#### 🔴 Critical Issues (Immediate Action Required)"
+                                )
+                                for issue in critical:
+                                    st.error(issue)
+
+                            if warnings:
+                                st.markdown("#### 🟡 Warnings (Should Be Addressed)")
+                                for issue in warnings:
+                                    st.warning(issue)
+
+                            if info:
+                                st.markdown("#### ℹ️ Informational")
+                                for issue in info[:10]:
+                                    st.info(issue)
+                                if len(info) > 10:
+                                    st.caption(
+                                        f"...and {len(info) - 10} more informational items"
+                                    )
+                        else:
+                            st.success(
+                                "✅ No major issues detected! Your security posture looks good."
+                            )
+
+                # Export Options (Disabled)
+                if False:
+                    st.markdown("---")
+                    st.markdown("### 📥 Export Results")
+
+                    col1, col2, col3 = st.columns(3)
+
+                    with col1:
+                        json_data = json.dumps(result, indent=2, default=str)
+                        st.download_button(
+                            label="📄 Download JSON Report",
+                            data=json_data,
+                            file_name=f"security_assessment_{url_input.replace('https://', '').replace('http://', '')}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json",
+                            mime="application/json",
+                        )
+
+                    with col2:
+                        summary = f"""Security Assessment Report
+                        ===========================
+                        Target: {result.get('domain', url_input)}
+                        Date: {datetime.now().strftime('%Y-%m-%d %H:%M:%S UTC')}
+                        Overall Score: {score}/100
+                        Risk Level: {risk}
+
+                        Score Breakdown (15 Categories):
+                        {chr(10).join([f'- {friendly_labels.get(k, k)}: {v}/100' for k, v in subscores.items()])}
+
+                        Critical Issues:
+                        {chr(10).join([f'- {i}' for i in all_issues if 'CRITICAL' in i]) or 'None'}
+
+                        Warnings:
+                        {chr(10).join([f'- {i}' for i in all_issues if 'WARNING' in i]) or 'None'}
+
+                        Informational:
+                        {chr(10).join([f'- {i}' for i in all_issues if 'INFO' in i][:10]) or 'None'}
+                        """
+                        st.download_button(
+                            label="📝 Download Text Summary",
+                            data=summary,
+                            file_name=f"security_summary_{url_input.replace('https://', '').replace('http://', '')}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt",
+                            mime="text/plain",
+                        )
+
+                    with col3:
+                        st.button(
+                            "🔄 Perform New Assessment", on_click=lambda: st.rerun()
+                        )
+
+            except Exception as e:
+                st.error(f"❌ Assessment failed: {str(e)}")
+                st.exception(e)
+
+                with st.expander("🐛 Debug Information"):
+                    st.code(
+                        f"""
+    Error Type: {type(e).__name__}
+    Error Message: {str(e)}
+
+    Please ensure:
+    1. single_target_cyber_score_updates.py is in the same directory
+    2. All required dependencies are installed:
+    - pip install requests dnspython cryptography tldextract pyyaml
+    3. The domain is accessible and properly formatted
+                    """
                     )
 
-            # Export Options
-            st.markdown("---")
-            st.markdown("### 📥 Export Results")
-
-            col1, col2, col3 = st.columns(3)
-
-            with col1:
-                json_data = json.dumps(result, indent=2, default=str)
-                st.download_button(
-                    label="📄 Download JSON Report",
-                    data=json_data,
-                    file_name=f"security_assessment_{url_input.replace('https://', '').replace('http://', '')}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json",
-                    mime="application/json",
-                )
-
-            with col2:
-                summary = f"""Security Assessment Report
-===========================
-Target: {result.get('domain', url_input)}
-Date: {datetime.now().strftime('%Y-%m-%d %H:%M:%S UTC')}
-Overall Score: {score}/100
-Risk Level: {risk}
-
-Score Breakdown (15 Categories):
-{chr(10).join([f'- {friendly_labels.get(k, k)}: {v}/100' for k, v in subscores.items()])}
-
-Critical Issues:
-{chr(10).join([f'- {i}' for i in all_issues if 'CRITICAL' in i]) or 'None'}
-
-Warnings:
-{chr(10).join([f'- {i}' for i in all_issues if 'WARNING' in i]) or 'None'}
-
-Informational:
-{chr(10).join([f'- {i}' for i in all_issues if 'INFO' in i][:10]) or 'None'}
-"""
-                st.download_button(
-                    label="📝 Download Text Summary",
-                    data=summary,
-                    file_name=f"security_summary_{url_input.replace('https://', '').replace('http://', '')}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt",
-                    mime="text/plain",
-                )
-
-            with col3:
-                st.button("🔄 Perform New Assessment", on_click=lambda: st.rerun())
-
-        except Exception as e:
-            st.error(f"❌ Assessment failed: {str(e)}")
-            st.exception(e)
-
-            with st.expander("🐛 Debug Information"):
-                st.code(
-                    f"""
-Error Type: {type(e).__name__}
-Error Message: {str(e)}
-
-Please ensure:
-1. single_target_cyber_score_updates.py is in the same directory
-2. All required dependencies are installed:
-   - pip install requests dnspython cryptography tldextract pyyaml
-3. The domain is accessible and properly formatted
-                """
-                )
+        # --- Error Handling for Invalid Domain / Unreachable Server ---
+        except socket.gaierror:
+            st.error(
+                f"❌ Could not resolve domain: {domain}. Please check the spelling or DNS configuration."
+            )
+        except requests.exceptions.RequestException:
+            st.error(f"❌ The server {domain} could not be reached via HTTP or HTTPS.")
 
 # ============================================================================
 # SCORE VALIDATION LOGIC
@@ -1205,7 +1285,11 @@ elif validate_button:
                 )
                 st.markdown("")
 
-                val_score = validation_report["overall_validation"]["validation_score"]
+                # Convert to integer for clean display
+                val_score = int(
+                    round(validation_report["overall_validation"]["validation_score"])
+                )
+                # val_score = validation_report["overall_validation"]["validation_score"]
                 credibility = validation_report["overall_validation"][
                     "credibility_rating"
                 ]
@@ -1251,102 +1335,118 @@ elif validate_button:
                     unsafe_allow_html=True,
                 )
 
-                st.markdown("---")
+                # st.markdown("---")
 
-                # Detailed Framework Mappings
-                with st.expander("📊 Detailed Framework Mappings", expanded=False):
-                    tab1, tab2, tab3 = st.tabs(
-                        ["NIST CSF Details", "CIS Controls Details", "OWASP Details"]
-                    )
-
-                    with tab1:
-                        st.markdown("#### NIST Cybersecurity Framework 2.0 Mapping")
-                        st.markdown(
-                            "*Showing how our 15 security tests map to NIST CSF functions*"
+                # Detailed Framework Mappings (Disabled)
+                if False:
+                    with st.expander("📊 Detailed Framework Mappings", expanded=False):
+                        tab1, tab2, tab3 = st.tabs(
+                            [
+                                "NIST CSF Details",
+                                "CIS Controls Details",
+                                "OWASP Details",
+                            ]
                         )
 
-                        nist_data = validation_report["framework_alignment"]["nist_csf"]
-                        for function, data in nist_data["function_breakdown"].items():
-                            if data["categories_mapped"] > 0:
-                                st.markdown(f"**{function}**")
+                        with tab1:
+                            st.markdown("#### NIST Cybersecurity Framework 2.0 Mapping")
+                            st.markdown(
+                                "*Showing how our 15 security tests map to NIST CSF functions*"
+                            )
+
+                            nist_data = validation_report["framework_alignment"][
+                                "nist_csf"
+                            ]
+                            for function, data in nist_data[
+                                "function_breakdown"
+                            ].items():
+                                if data["categories_mapped"] > 0:
+                                    st.markdown(f"**{function}**")
+                                    st.write(
+                                        f"Categories mapped: {', '.join(data['categories'])}"
+                                    )
+                                    # Fix: Ensure progress value is between 0 and 1
+                                    progress_value = min(
+                                        1.0,
+                                        data["categories_mapped"]
+                                        / max(1, data["subcategories"]),
+                                    )
+                                    st.progress(progress_value)
+                                    st.markdown("---")
+
+                        with tab2:
+                            st.markdown("#### CIS Controls v8 Safeguard Mapping")
+                            st.markdown(
+                                "*External security controls covered by our assessment*"
+                            )
+
+                            cis_data = validation_report["framework_alignment"][
+                                "cis_controls"
+                            ]
+                            for safeguard in cis_data.get("covered_safeguards", [])[
+                                :10
+                            ]:
+                                st.markdown(f"**{safeguard['safeguard']}**")
                                 st.write(
-                                    f"Categories mapped: {', '.join(data['categories'])}"
+                                    f"Category: `{safeguard['category']}` | IG: `{safeguard['implementation_group']}` | Score: `{safeguard['score']}/100`"
                                 )
-                                # Fix: Ensure progress value is between 0 and 1
-                                progress_value = min(
-                                    1.0,
-                                    data["categories_mapped"]
-                                    / max(1, data["subcategories"]),
-                                )
-                                st.progress(progress_value)
                                 st.markdown("---")
 
-                    with tab2:
-                        st.markdown("#### CIS Controls v8 Safeguard Mapping")
-                        st.markdown(
-                            "*External security controls covered by our assessment*"
+                            if len(cis_data.get("covered_safeguards", [])) > 10:
+                                st.caption(
+                                    f"...and {len(cis_data.get('covered_safeguards', [])) - 10} more safeguards"
+                                )
+
+                        with tab3:
+                            st.markdown("#### OWASP Top 10 (2021) Risk Coverage")
+                            st.markdown("*Web application security risks addressed*")
+
+                            owasp_data = validation_report["framework_alignment"][
+                                "owasp"
+                            ]
+                            for category in owasp_data["category_breakdown"]:
+                                st.markdown(f"**{category['owasp_category']}**")
+                                st.write(
+                                    f"Our categories: {', '.join(category['our_categories'])}"
+                                )
+                                st.write(
+                                    f"Average score: {category['average_score']}/100"
+                                )
+                                st.progress(category["average_score"] / 100)
+                                st.markdown("---")
+
+                # st.markdown("---")
+
+                # Export Validation Report (Disabled)
+                if False:
+                    st.markdown("### 📥 Export Validation Report")
+
+                    col1, col2, col3 = st.columns(3)
+
+                    with col1:
+                        validation_json = validator.export_validation_report(
+                            validation_report, format="json"
+                        )
+                        st.download_button(
+                            label="📄 Download JSON Report",
+                            data=validation_json,
+                            file_name=f"validation_report_{url_input.replace('https://', '').replace('http://', '')}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json",
+                            mime="application/json",
                         )
 
-                        cis_data = validation_report["framework_alignment"][
-                            "cis_controls"
-                        ]
-                        for safeguard in cis_data.get("covered_safeguards", [])[:10]:
-                            st.markdown(f"**{safeguard['safeguard']}**")
-                            st.write(
-                                f"Category: `{safeguard['category']}` | IG: `{safeguard['implementation_group']}` | Score: `{safeguard['score']}/100`"
-                            )
-                            st.markdown("---")
+                    with col2:
+                        validation_text = validator.export_validation_report(
+                            validation_report, format="text"
+                        )
+                        st.download_button(
+                            label="📝 Download Text Report",
+                            data=validation_text,
+                            file_name=f"validation_report_{url_input.replace('https://', '').replace('http://', '')}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt",
+                            mime="text/plain",
+                        )
 
-                        if len(cis_data.get("covered_safeguards", [])) > 10:
-                            st.caption(
-                                f"...and {len(cis_data.get('covered_safeguards', [])) - 10} more safeguards"
-                            )
-
-                    with tab3:
-                        st.markdown("#### OWASP Top 10 (2021) Risk Coverage")
-                        st.markdown("*Web application security risks addressed*")
-
-                        owasp_data = validation_report["framework_alignment"]["owasp"]
-                        for category in owasp_data["category_breakdown"]:
-                            st.markdown(f"**{category['owasp_category']}**")
-                            st.write(
-                                f"Our categories: {', '.join(category['our_categories'])}"
-                            )
-                            st.write(f"Average score: {category['average_score']}/100")
-                            st.progress(category["average_score"] / 100)
-                            st.markdown("---")
-
-                st.markdown("---")
-
-                # Export Validation Report
-                st.markdown("### 📥 Export Validation Report")
-
-                col1, col2, col3 = st.columns(3)
-
-                with col1:
-                    validation_json = validator.export_validation_report(
-                        validation_report, format="json"
-                    )
-                    st.download_button(
-                        label="📄 Download JSON Report",
-                        data=validation_json,
-                        file_name=f"validation_report_{url_input.replace('https://', '').replace('http://', '')}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json",
-                        mime="application/json",
-                    )
-
-                with col2:
-                    validation_text = validator.export_validation_report(
-                        validation_report, format="text"
-                    )
-                    st.download_button(
-                        label="📝 Download Text Report",
-                        data=validation_text,
-                        file_name=f"validation_report_{url_input.replace('https://', '').replace('http://', '')}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt",
-                        mime="text/plain",
-                    )
-
-                with col3:
-                    st.button("🔄 New Validation", on_click=lambda: st.rerun())
+                    with col3:
+                        st.button("🔄 New Validation", on_click=lambda: st.rerun())
 
             except ImportError:
                 st.error(
